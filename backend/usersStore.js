@@ -1,82 +1,91 @@
-const fs = require('fs');
-const path = require('path');
-
-const DATA_FILE = path.join(__dirname, 'data', 'users.json');
-
-function ensureFile() {
-  if (!fs.existsSync(DATA_FILE)) {
-    fs.mkdirSync(path.dirname(DATA_FILE), { recursive: true });
-    fs.writeFileSync(DATA_FILE, '[]', 'utf8');
-  }
-}
-
-function readUsers() {
-  ensureFile();
-  const raw = fs.readFileSync(DATA_FILE, 'utf8');
-  try {
-    return JSON.parse(raw);
-  } catch {
-    return [];
-  }
-}
-
-function writeUsers(users) {
-  ensureFile();
-  fs.writeFileSync(DATA_FILE, JSON.stringify(users, null, 2), 'utf8');
-}
+const { sql, ensureSchema } = require('./db');
 
 // Só existem dois níveis de acesso: "admin" (pode gerenciar quem mais tem
 // acesso ao painel, além de tudo que um colaborador já pode) e
 // "colaborador" (cadastra/edita itens, categorias, vê estatísticas — só não
-// mexe em permissões de outras contas). Contas antigas, salvas antes desse
-// campo existir, não têm "role" no arquivo — tratamos a ausência dele como
-// "admin" pra não tirar acesso de ninguém que já tinha conta.
+// mexe em permissões de outras contas). Contas sem "role" gravado são
+// tratadas como "admin", pra não tirar acesso de ninguém que já tinha conta.
 const ROLES = ['admin', 'colaborador'];
 
 function isAdmin(user) {
   return Boolean(user) && (!user.role || user.role === 'admin');
 }
 
-function count() {
-  return readUsers().length;
+function mapRow(row) {
+  return {
+    id: row.id,
+    username: row.username,
+    email: row.email,
+    passwordHash: row.password_hash,
+    role: row.role,
+    resetTokenHash: row.reset_token_hash,
+    resetTokenExpires: row.reset_token_expires === null ? null : Number(row.reset_token_expires),
+    createdAt: Number(row.created_at),
+  };
 }
 
-function getAll() {
-  return readUsers();
+async function count() {
+  await ensureSchema();
+  const { rows } = await sql`SELECT COUNT(*)::int AS c FROM users`;
+  return rows[0].c;
 }
 
-function findByUsername(username) {
-  const needle = username.toLowerCase();
-  return readUsers().find((u) => u.username.toLowerCase() === needle) || null;
+async function getAll() {
+  await ensureSchema();
+  const { rows } = await sql`SELECT * FROM users ORDER BY created_at`;
+  return rows.map(mapRow);
 }
 
-function findByEmail(email) {
-  const needle = email.toLowerCase();
-  return readUsers().find((u) => u.email && u.email.toLowerCase() === needle) || null;
+async function findByUsername(username) {
+  await ensureSchema();
+  const { rows } = await sql`SELECT * FROM users WHERE LOWER(username) = ${username.toLowerCase()}`;
+  return rows[0] ? mapRow(rows[0]) : null;
 }
 
-function findByUsernameOrEmail(value) {
-  return findByUsername(value) || findByEmail(value);
+async function findByEmail(email) {
+  await ensureSchema();
+  const { rows } = await sql`SELECT * FROM users WHERE LOWER(email) = ${email.toLowerCase()}`;
+  return rows[0] ? mapRow(rows[0]) : null;
 }
 
-function findById(id) {
-  return readUsers().find((u) => u.id === id) || null;
+async function findByUsernameOrEmail(value) {
+  return (await findByUsername(value)) || (await findByEmail(value));
 }
 
-function create(user) {
-  const users = readUsers();
-  users.push(user);
-  writeUsers(users);
+async function findById(id) {
+  await ensureSchema();
+  const { rows } = await sql`SELECT * FROM users WHERE id = ${id}`;
+  return rows[0] ? mapRow(rows[0]) : null;
+}
+
+async function create(user) {
+  await ensureSchema();
+  await sql`
+    INSERT INTO users (id, username, email, password_hash, role, reset_token_hash, reset_token_expires, created_at)
+    VALUES (
+      ${user.id}, ${user.username}, ${user.email}, ${user.passwordHash}, ${user.role || null},
+      ${user.resetTokenHash || null}, ${user.resetTokenExpires || null}, ${user.createdAt}
+    )
+  `;
   return user;
 }
 
-function update(id, changes) {
-  const users = readUsers();
-  const index = users.findIndex((u) => u.id === id);
-  if (index === -1) return null;
-  users[index] = { ...users[index], ...changes };
-  writeUsers(users);
-  return users[index];
+async function update(id, changes) {
+  await ensureSchema();
+  const current = await findById(id);
+  if (!current) return null;
+  const merged = { ...current, ...changes };
+  await sql`
+    UPDATE users SET
+      username = ${merged.username},
+      email = ${merged.email},
+      password_hash = ${merged.passwordHash},
+      role = ${merged.role || null},
+      reset_token_hash = ${merged.resetTokenHash || null},
+      reset_token_expires = ${merged.resetTokenExpires || null}
+    WHERE id = ${id}
+  `;
+  return merged;
 }
 
 module.exports = {

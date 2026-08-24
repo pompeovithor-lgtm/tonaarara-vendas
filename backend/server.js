@@ -4,9 +4,9 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const express = require('express');
-const session = require('express-session');
 const multer = require('multer');
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 const rateLimit = require('express-rate-limit');
 const sharp = require('sharp');
 const compression = require('compression');
@@ -18,12 +18,12 @@ const visitsStore = require('./visitsStore');
 const eventsStore = require('./eventsStore');
 const salesStore = require('./salesStore');
 const mailer = require('./mailer');
+const blobStorage = require('./blobStorage');
 
 // Rede de segurança: sem isto, uma promise rejeitada que ninguém tratou (ex.:
-// erro de disco cheio no meio de um upload) derruba o processo Node inteiro
-// a partir da v15 — um único request com azar tiraria o site do ar pra
-// todo mundo. Aqui só loga o erro; o request que causou fica sem resposta e
-// expira normalmente, mas o servidor continua no ar para os demais.
+// erro de rede com o banco no meio de uma requisição) derruba o processo Node
+// inteiro a partir da v15. Aqui só loga o erro; o request que causou fica sem
+// resposta e expira normalmente, mas o servidor continua no ar para os demais.
 process.on('unhandledRejection', (reason) => {
   console.error('Promise rejeitada sem tratamento:', reason);
 });
@@ -32,32 +32,36 @@ const SIZES = ['P', 'M', 'G', 'GG'];
 
 const VISITOR_COOKIE_NAME = 'tonaarara.vid';
 const VISITOR_COOKIE_MAX_AGE = 365 * 24 * 60 * 60 * 1000;
+const AUTH_COOKIE_NAME = 'tonaarara.auth';
+const AUTH_COOKIE_MAX_AGE = 7 * 24 * 60 * 60 * 1000;
 const TRACK_RATE_LIMIT_WINDOW_MS = 60 * 1000;
 const TRACK_RATE_LIMIT_MAX = 60;
 
 const ENV_PATH = path.join(__dirname, '.env');
 
-// SESSION_SECRET é a única variável obrigatória para o servidor subir —
-// se não existir ainda (primeira vez rodando o projeto), geramos uma e
-// gravamos no .env automaticamente.
-if (!process.env.SESSION_SECRET) {
+// JWT_SECRET assina o cookie de login (substitui sessão em memória, que não
+// sobrevive em função serverless). Na Vercel precisa estar definido nas
+// variáveis de ambiente do projeto — sem isso o servidor recusa subir, pra
+// não gerar um segredo novo a cada cold start (o que derrubaria o login de
+// todo mundo). Em desenvolvimento local, sem a variável definida, geramos um
+// segredo e gravamos no .env automaticamente, por conveniência.
+if (!process.env.JWT_SECRET) {
+  if (process.env.VERCEL) {
+    throw new Error('Defina a variável de ambiente JWT_SECRET nas configurações do projeto na Vercel.');
+  }
   const secret = crypto.randomBytes(32).toString('hex');
-  fs.appendFileSync(ENV_PATH, `SESSION_SECRET=${secret}\n`);
-  process.env.SESSION_SECRET = secret;
+  fs.appendFileSync(ENV_PATH, `JWT_SECRET=${secret}\n`);
+  process.env.JWT_SECRET = secret;
 }
 
 const PORT = process.env.PORT || 3000;
-const SESSION_SECRET = process.env.SESSION_SECRET;
+const JWT_SECRET = process.env.JWT_SECRET;
 const BASE_URL = process.env.BASE_URL || `http://localhost:${PORT}`;
 // Cookies "secure" só são enviados em conexões HTTPS. Fica desligado por
 // padrão pra não quebrar o desenvolvimento local (http://localhost não é
 // HTTPS) — ligue com COOKIE_SECURE=true no .env assim que publicar a loja
-// atrás de HTTPS de verdade.
-const COOKIE_SECURE = process.env.COOKIE_SECURE === 'true';
-
-const SITE_DIR = path.join(__dirname, '..', 'site-copy');
-const UPLOADS_DIR = path.join(__dirname, 'uploads');
-fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+// atrás de HTTPS de verdade (a Vercel já serve tudo em HTTPS).
+const COOKIE_SECURE = process.env.COOKIE_SECURE === 'true' || Boolean(process.env.VERCEL);
 
 const ALLOWED_MIME_TO_EXT = {
   'image/jpeg': '.jpg',
@@ -67,10 +71,10 @@ const ALLOWED_MIME_TO_EXT = {
 };
 
 // Upload em memória (não grava o arquivo original em disco): o buffer passa
-// pelo sharp antes de virar arquivo, então a versão redimensionada/comprimida
-// é a única que chega a backend/uploads. O limite aqui é do arquivo ORIGINAL
-// enviado pelo celular (fotos de câmera facilmente passam de 5MB); o que sai
-// depois da compressão é bem menor.
+// pelo sharp antes de subir pro Vercel Blob, então a versão
+// redimensionada/comprimida é a única que chega lá. O limite aqui é do
+// arquivo ORIGINAL enviado pelo celular (fotos de câmera facilmente passam de
+// 5MB); o que sai depois da compressão é bem menor.
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 },
@@ -82,20 +86,19 @@ const upload = multer({
 
 const MAX_IMAGE_DIMENSION = 1600;
 
-// Redimensiona (maior lado até 1600px) e comprime a imagem enviada, salvando
-// o resultado em backend/uploads com um nome novo. Todo arquivo passa pelo
-// sharp — inclusive GIF, com { animated: true } pra preservar a animação —
-// porque o sharp decodifica o conteúdo de verdade: um arquivo que só
-// "finge" ser imagem (Content-Type forjado por um cliente que não é o
-// navegador) é rejeitado aqui, em vez de ser gravado como está em
-// backend/uploads, que é uma pasta servida publicamente.
+// Redimensiona (maior lado até 1600px) e comprime a imagem enviada, subindo
+// o resultado pro Vercel Blob e devolvendo a URL pública. Todo arquivo passa
+// pelo sharp — inclusive GIF, com { animated: true } pra preservar a
+// animação — porque o sharp decodifica o conteúdo de verdade: um arquivo que
+// só "finge" ser imagem (Content-Type forjado por um cliente que não é o
+// navegador) é rejeitado aqui, em vez de ser publicado como está.
 async function saveUploadedImage(file) {
   const ext = ALLOWED_MIME_TO_EXT[file.mimetype] || '';
   const filename = crypto.randomUUID() + ext;
-  const destPath = path.join(UPLOADS_DIR, filename);
 
+  let buffer;
   if (file.mimetype === 'image/gif') {
-    await sharp(file.buffer, { animated: true })
+    buffer = await sharp(file.buffer, { animated: true })
       .resize({
         width: MAX_IMAGE_DIMENSION,
         height: MAX_IMAGE_DIMENSION,
@@ -103,29 +106,29 @@ async function saveUploadedImage(file) {
         withoutEnlargement: true,
       })
       .gif()
-      .toFile(destPath);
-    return filename;
+      .toBuffer();
+  } else {
+    let pipeline = sharp(file.buffer)
+      .rotate() // aplica a orientação EXIF (comum em fotos de celular) antes de descartar os metadados
+      .resize({
+        width: MAX_IMAGE_DIMENSION,
+        height: MAX_IMAGE_DIMENSION,
+        fit: 'inside',
+        withoutEnlargement: true,
+      });
+
+    // PNG é sem perdas: o sharp só usa a opção "quality" quando "palette" está
+    // ligado (paleta indexada) — sem isso ela é ignorada silenciosamente, então
+    // nem declaramos aqui. compressionLevel:9 já aplica a compressão máxima
+    // (lossless); quem realmente reduz o tamanho do arquivo é o resize acima.
+    if (file.mimetype === 'image/png') pipeline = pipeline.png({ compressionLevel: 9 });
+    else if (file.mimetype === 'image/webp') pipeline = pipeline.webp({ quality: 80 });
+    else pipeline = pipeline.jpeg({ quality: 80, mozjpeg: true });
+
+    buffer = await pipeline.toBuffer();
   }
 
-  let pipeline = sharp(file.buffer)
-    .rotate() // aplica a orientação EXIF (comum em fotos de celular) antes de descartar os metadados
-    .resize({
-      width: MAX_IMAGE_DIMENSION,
-      height: MAX_IMAGE_DIMENSION,
-      fit: 'inside',
-      withoutEnlargement: true,
-    });
-
-  // PNG é sem perdas: o sharp só usa a opção "quality" quando "palette" está
-  // ligado (paleta indexada) — sem isso ela é ignorada silenciosamente, então
-  // nem declaramos aqui. compressionLevel:9 já aplica a compressão máxima
-  // (lossless); quem realmente reduz o tamanho do arquivo é o resize acima.
-  if (file.mimetype === 'image/png') pipeline = pipeline.png({ compressionLevel: 9 });
-  else if (file.mimetype === 'image/webp') pipeline = pipeline.webp({ quality: 80 });
-  else pipeline = pipeline.jpeg({ quality: 80, mozjpeg: true });
-
-  await pipeline.toFile(destPath);
-  return filename;
+  return blobStorage.uploadImage(filename, buffer, file.mimetype);
 }
 
 const app = express();
@@ -145,54 +148,10 @@ app.use((req, res, next) => {
 });
 
 // Compacta HTML/CSS/JS/JSON antes de enviar (gzip) — reduz bastante o
-// tamanho transferido pra quem acessa pelo celular. Fotos não passam por
-// aqui de novo (JPEG/PNG/WEBP já são formatos comprimidos, gzip não ajuda
-// e só gastaria CPU à toa) — o compression já pula esses tipos sozinho.
+// tamanho transferido pra quem acessa pelo celular.
 app.use(compression());
 
 app.use(express.json());
-app.use(
-  session({
-    name: 'tonaarara.sid',
-    secret: SESSION_SECRET,
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: COOKIE_SECURE,
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    },
-  })
-);
-
-// Fotos da vitrine: nome de arquivo é sempre um UUID gerado pelo servidor
-// (nunca reaproveitado — uma edição gera um arquivo novo), então o conteúdo
-// de uma URL de /uploads nunca muda. Cache longo e "immutable" é seguro e é
-// o maior ganho de performance possível aqui, já que fotos são o item mais
-// pesado da página.
-app.use('/uploads', express.static(UPLOADS_DIR, { maxAge: '1y', immutable: true }));
-app.use(express.static(SITE_DIR));
-
-function requireAuth(req, res, next) {
-  if (req.session && req.session.loggedIn) return next();
-  return res.status(401).json({ error: 'Não autenticado.' });
-}
-
-// Mais estrito que requireAuth: usado só nas rotas de gestão de permissões,
-// pra um colaborador não conseguir se promover (ou promover outra conta)
-// chamando a API diretamente, mesmo que a aba "Usuários" fique escondida
-// pra ele na tela.
-function requireAdmin(req, res, next) {
-  if (!(req.session && req.session.loggedIn)) {
-    return res.status(401).json({ error: 'Não autenticado.' });
-  }
-  const user = usersStore.findById(req.session.userId);
-  if (!usersStore.isAdmin(user)) {
-    return res.status(403).json({ error: 'Só administradores podem fazer isso.' });
-  }
-  next();
-}
 
 function toPublicItem(item) {
   return {
@@ -203,16 +162,13 @@ function toPublicItem(item) {
     size: item.size,
     category: item.category,
     status: item.status,
-    imageUrls: (item.images || []).map((filename) => `/uploads/${filename}`),
+    imageUrls: item.images || [],
     createdAt: item.createdAt,
   };
 }
 
-function deleteImageFiles(filenames) {
-  (filenames || []).forEach((filename) => {
-    if (!filename) return;
-    fs.unlink(path.join(UPLOADS_DIR, filename), () => {});
-  });
+async function deleteImageFiles(urls) {
+  await Promise.all((urls || []).filter(Boolean).map((url) => blobStorage.deleteImage(url)));
 }
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -234,10 +190,9 @@ function tokensMatch(a, b) {
   return crypto.timingSafeEqual(bufA, bufB);
 }
 
-// ---------- Ajudantes de rastreamento (visitas e eventos anônimos) ----------
-
 // Não usamos cookie-parser (o projeto evita dependências extras quando dá):
-// só precisamos ler um único cookie próprio, então um parser manual resolve.
+// só precisamos ler um punhado de cookies próprios, então um parser manual
+// resolve.
 function parseCookieHeader(header) {
   const cookies = {};
   (header || '').split(';').forEach((pair) => {
@@ -250,9 +205,66 @@ function parseCookieHeader(header) {
   return cookies;
 }
 
+// ---------- Autenticação: cookie assinado (JWT) no lugar de sessão em memória ----------
+
+function signAuthToken(user) {
+  return jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '7d' });
+}
+
+function setAuthCookie(res, user) {
+  res.cookie(AUTH_COOKIE_NAME, signAuthToken(user), {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: COOKIE_SECURE,
+    maxAge: AUTH_COOKIE_MAX_AGE,
+  });
+}
+
+function clearAuthCookie(res) {
+  res.clearCookie(AUTH_COOKIE_NAME);
+}
+
+// Devolve o payload do token ({ userId }) se o cookie existir e for válido,
+// ou null. Não consulta o banco — só confirma a assinatura, então é barata
+// de chamar em toda requisição (inclusive nas de rastreamento público).
+function getAuthPayload(req) {
+  const cookies = parseCookieHeader(req.headers.cookie);
+  const token = cookies[AUTH_COOKIE_NAME];
+  if (!token) return null;
+  try {
+    return jwt.verify(token, JWT_SECRET);
+  } catch {
+    return null;
+  }
+}
+
+function requireAuth(req, res, next) {
+  const payload = getAuthPayload(req);
+  if (!payload) return res.status(401).json({ error: 'Não autenticado.' });
+  req.auth = payload;
+  next();
+}
+
+// Mais estrito que requireAuth: usado só nas rotas de gestão de permissões,
+// pra um colaborador não conseguir se promover (ou promover outra conta)
+// chamando a API diretamente, mesmo que a aba "Usuários" fique escondida
+// pra ele na tela.
+async function requireAdmin(req, res, next) {
+  const payload = getAuthPayload(req);
+  if (!payload) return res.status(401).json({ error: 'Não autenticado.' });
+  const user = await usersStore.findById(payload.userId);
+  if (!usersStore.isAdmin(user)) {
+    return res.status(403).json({ error: 'Só administradores podem fazer isso.' });
+  }
+  req.auth = payload;
+  next();
+}
+
+// ---------- Ajudantes de rastreamento (visitas e eventos anônimos) ----------
+
 // Identifica o visitante de forma anônima: um UUID sem nenhum dado pessoal,
-// guardado num cookie próprio (separado do cookie de sessão do admin) só
-// pra não contar a mesma pessoa duas vezes.
+// guardado num cookie próprio (separado do cookie de login) só pra não
+// contar a mesma pessoa duas vezes.
 function getOrCreateVisitorId(req, res) {
   const cookies = parseCookieHeader(req.headers.cookie);
   let visitorId = cookies[VISITOR_COOKIE_NAME];
@@ -293,7 +305,8 @@ function parseDataLocal(value) {
 }
 
 // Limite simples por IP pra evitar que alguém martele os endpoints de
-// rastreamento: guardado em memória, não precisa sobreviver a um reinício.
+// rastreamento: guardado em memória (reinicia a cada cold start da função,
+// o que é aceitável pra esse limite ser só uma camada extra, não a única).
 const trackRateLimitBuckets = new Map();
 setInterval(() => {
   const now = Date.now();
@@ -333,18 +346,18 @@ function authRateLimiter() {
 
 // ---------- Autenticação: sessão, login, logout ----------
 
-app.get('/api/session', (req, res) => {
-  const loggedIn = Boolean(req.session && req.session.loggedIn);
-  const user = loggedIn ? usersStore.findById(req.session.userId) : null;
+app.get('/api/session', async (req, res) => {
+  const payload = getAuthPayload(req);
+  const user = payload ? await usersStore.findById(payload.userId) : null;
   res.json({
-    loggedIn,
-    username: req.session?.username || null,
-    email: req.session?.email || null,
+    loggedIn: Boolean(user),
+    username: user ? user.username : null,
+    email: user ? user.email : null,
     isAdmin: usersStore.isAdmin(user),
   });
 });
 
-app.post('/api/login', authRateLimiter(), (req, res) => {
+app.post('/api/login', authRateLimiter(), async (req, res) => {
   const { username, password } = req.body || {};
   if (!username || !password) {
     return res.status(400).json({ error: 'Informe usuário/e-mail e senha.' });
@@ -352,22 +365,17 @@ app.post('/api/login', authRateLimiter(), (req, res) => {
   if (String(username).length > 254 || String(password).length > 72) {
     return res.status(401).json({ error: 'Usuário/e-mail ou senha inválidos.' });
   }
-  const user = usersStore.findByUsernameOrEmail(String(username).trim());
+  const user = await usersStore.findByUsernameOrEmail(String(username).trim());
   if (!user || !bcrypt.compareSync(password, user.passwordHash)) {
     return res.status(401).json({ error: 'Usuário/e-mail ou senha inválidos.' });
   }
-  req.session.loggedIn = true;
-  req.session.userId = user.id;
-  req.session.username = user.username;
-  req.session.email = user.email;
+  setAuthCookie(res, user);
   res.json({ loggedIn: true, username: user.username, email: user.email, isAdmin: usersStore.isAdmin(user) });
 });
 
 app.post('/api/logout', (req, res) => {
-  req.session.destroy(() => {
-    res.clearCookie('tonaarara.sid');
-    res.json({ ok: true });
-  });
+  clearAuthCookie(res);
+  res.json({ ok: true });
 });
 
 // ---------- Autenticação: criar conta ----------
@@ -376,7 +384,7 @@ app.post('/api/logout', (req, res) => {
 // .env do servidor — assim visitantes do site não conseguem criar acesso
 // ao painel sozinhos.
 
-app.post('/api/register', authRateLimiter(), (req, res) => {
+app.post('/api/register', authRateLimiter(), async (req, res) => {
   const { username, email, password, confirmPassword, signupCode } = req.body || {};
 
   const cleanUsername = String(username || '').trim();
@@ -395,17 +403,17 @@ app.post('/api/register', authRateLimiter(), (req, res) => {
     return res.status(400).json({ error: 'As senhas não coincidem.' });
   }
 
-  const existingUsers = usersStore.count();
+  const existingUsers = await usersStore.count();
   if (existingUsers > 0) {
     if (!process.env.SIGNUP_CODE || signupCode !== process.env.SIGNUP_CODE) {
       return res.status(403).json({ error: 'Cadastro fechado. Peça o código de convite a quem já tem acesso ao painel.' });
     }
   }
 
-  if (usersStore.findByUsername(cleanUsername)) {
+  if (await usersStore.findByUsername(cleanUsername)) {
     return res.status(409).json({ error: 'Esse usuário já existe.' });
   }
-  if (usersStore.findByEmail(cleanEmail)) {
+  if (await usersStore.findByEmail(cleanEmail)) {
     return res.status(409).json({ error: 'Já existe uma conta com esse e-mail.' });
   }
 
@@ -423,12 +431,9 @@ app.post('/api/register', authRateLimiter(), (req, res) => {
     resetTokenExpires: null,
     createdAt: Date.now(),
   };
-  usersStore.create(user);
+  await usersStore.create(user);
 
-  req.session.loggedIn = true;
-  req.session.userId = user.id;
-  req.session.username = user.username;
-  req.session.email = user.email;
+  setAuthCookie(res, user);
   res.status(201).json({ loggedIn: true, username: user.username, email: user.email, isAdmin: usersStore.isAdmin(user) });
 });
 
@@ -441,11 +446,11 @@ app.post('/api/forgot-password', authRateLimiter(), async (req, res) => {
   }
 
   const genericMessage = 'Se esse e-mail tiver uma conta, enviamos um link de recuperação para ele.';
-  const user = usersStore.findByEmail(email);
+  const user = await usersStore.findByEmail(email);
 
   if (user) {
     const token = crypto.randomBytes(32).toString('hex');
-    usersStore.update(user.id, {
+    await usersStore.update(user.id, {
       resetTokenHash: sha256(token),
       resetTokenExpires: Date.now() + 60 * 60 * 1000,
     });
@@ -462,7 +467,7 @@ app.post('/api/forgot-password', authRateLimiter(), async (req, res) => {
 
 const RESET_TOKEN_RE = /^[0-9a-f]{64}$/;
 
-app.post('/api/reset-password', authRateLimiter(), (req, res) => {
+app.post('/api/reset-password', authRateLimiter(), async (req, res) => {
   const email = String((req.body && req.body.email) || '').trim().toLowerCase();
   const token = String((req.body && req.body.token) || '');
   const { password, confirmPassword } = req.body || {};
@@ -479,7 +484,7 @@ app.post('/api/reset-password', authRateLimiter(), (req, res) => {
     return res.status(400).json({ error: 'As senhas não coincidem.' });
   }
 
-  const user = usersStore.findByEmail(email);
+  const user = await usersStore.findByEmail(email);
   if (!user || !user.resetTokenHash || !user.resetTokenExpires) {
     return res.status(400).json({ error: invalidMessage });
   }
@@ -487,7 +492,7 @@ app.post('/api/reset-password', authRateLimiter(), (req, res) => {
     return res.status(400).json({ error: invalidMessage });
   }
 
-  usersStore.update(user.id, {
+  await usersStore.update(user.id, {
     passwordHash: bcrypt.hashSync(password, 10),
     resetTokenHash: null,
     resetTokenExpires: null,
@@ -500,8 +505,8 @@ app.post('/api/reset-password', authRateLimiter(), (req, res) => {
 // categoria nova (ex.: "Camisa"), ela entra pra lista automaticamente e
 // passa a aparecer como sugestão nos próximos cadastros.
 
-app.get('/api/categories', (req, res) => {
-  res.json(categoriesStore.getAll());
+app.get('/api/categories', async (req, res) => {
+  res.json(await categoriesStore.getAll());
 });
 
 // Gestão de categorias: só a loja, logada, pode mexer. Criar existe pra
@@ -511,18 +516,18 @@ app.get('/api/categories', (req, res) => {
 // texto em todos os itens que usam a categoria antiga. Excluir só é
 // permitido se nenhum item estiver usando a categoria.
 
-app.post('/api/admin/categories', requireAuth, (req, res) => {
+app.post('/api/admin/categories', requireAuth, async (req, res) => {
   const name = ((req.body && req.body.name) || '').trim();
 
   if (!name || name.length > 60) {
     return res.status(400).json({ error: 'Informe um nome de categoria válido.' });
   }
 
-  const saved = categoriesStore.ensure(name);
+  const saved = await categoriesStore.ensure(name);
   res.status(201).json({ name: saved });
 });
 
-app.put('/api/admin/categories/:name', requireAuth, (req, res) => {
+app.put('/api/admin/categories/:name', requireAuth, async (req, res) => {
   const oldName = req.params.name;
   const newName = ((req.body && req.body.newName) || '').trim();
 
@@ -530,34 +535,34 @@ app.put('/api/admin/categories/:name', requireAuth, (req, res) => {
     return res.status(400).json({ error: 'Informe um nome de categoria válido.' });
   }
 
-  const renamed = categoriesStore.rename(oldName, newName);
+  const renamed = await categoriesStore.rename(oldName, newName);
   if (!renamed) return res.status(404).json({ error: 'Categoria não encontrada.' });
 
-  itemsStore.renameCategory(oldName, renamed);
+  await itemsStore.renameCategory(oldName, renamed);
   res.json({ ok: true, name: renamed });
 });
 
-app.delete('/api/admin/categories/:name', requireAuth, (req, res) => {
+app.delete('/api/admin/categories/:name', requireAuth, async (req, res) => {
   const name = req.params.name;
 
-  if (itemsStore.isCategoryInUse(name)) {
+  if (await itemsStore.isCategoryInUse(name)) {
     return res.status(409).json({
       error: 'Essa categoria está em uso por pelo menos um item. Troque a categoria desses itens antes de excluí-la.',
     });
   }
 
-  const removed = categoriesStore.remove(name);
+  const removed = await categoriesStore.remove(name);
   if (!removed) return res.status(404).json({ error: 'Categoria não encontrada.' });
   res.json({ ok: true });
 });
 
 // ---------- Itens da vitrine ----------
 
-app.get('/api/items', (req, res) => {
+app.get('/api/items', async (req, res) => {
   const precoMin = req.query.precoMin !== undefined ? Number(req.query.precoMin) : undefined;
   const precoMax = req.query.precoMax !== undefined ? Number(req.query.precoMax) : undefined;
 
-  const items = itemsStore.search({
+  const items = await itemsStore.search({
     q: typeof req.query.q === 'string' ? req.query.q : undefined,
     categoria: typeof req.query.categoria === 'string' ? req.query.categoria : undefined,
     tamanho: typeof req.query.tamanho === 'string' ? req.query.tamanho : undefined,
@@ -575,9 +580,9 @@ app.post('/api/items', requireAuth, (req, res) => {
     if (err) return res.status(400).json({ error: err.message });
 
     // try/catch cobrindo o handler inteiro: sem isto, um erro inesperado
-    // (ex.: disco cheio ao gravar o item) numa função async passada como
-    // callback pro multer vira uma promise rejeitada que ninguém trata —
-    // o pedido nunca recebe resposta (fica pendurado até dar timeout).
+    // (ex.: falha ao subir a imagem pro Blob) numa função async passada
+    // como callback pro multer vira uma promise rejeitada que ninguém
+    // trata — o pedido nunca recebe resposta (fica pendurado até dar timeout).
     try {
       const name = (req.body.name || '').trim();
       const description = (req.body.description || '').trim();
@@ -619,12 +624,12 @@ app.post('/api/items', requireAuth, (req, res) => {
         description,
         price,
         size,
-        category: categoriesStore.ensure(category),
+        category: await categoriesStore.ensure(category),
         status,
         images,
         createdAt: Date.now(),
       };
-      itemsStore.create(item);
+      await itemsStore.create(item);
       res.status(201).json(toPublicItem(item));
     } catch (e) {
       console.error('Erro ao cadastrar item:', e);
@@ -638,7 +643,7 @@ app.put('/api/items/:id', requireAuth, (req, res) => {
     if (err) return res.status(400).json({ error: err.message });
 
     try {
-      const existing = itemsStore.getById(req.params.id);
+      const existing = await itemsStore.getById(req.params.id);
       if (!existing) return res.status(404).json({ error: 'Item não encontrado.' });
 
       const changes = {};
@@ -668,7 +673,7 @@ app.put('/api/items/:id', requireAuth, (req, res) => {
       if (req.body.category !== undefined) {
         const category = req.body.category.trim();
         if (!category || category.length > 60) return res.status(400).json({ error: 'Informe uma categoria.' });
-        changes.category = categoriesStore.ensure(category);
+        changes.category = await categoriesStore.ensure(category);
       }
       if (req.body.status !== undefined) {
         const status = req.body.status.trim();
@@ -678,9 +683,9 @@ app.put('/api/items/:id', requireAuth, (req, res) => {
 
       // "existingImages" é a lista (em ordem) das fotos já salvas que devem
       // continuar no item — é assim que o painel remove uma foto específica
-      // e troca a capa (a primeira da lista). Só aceitamos nomes de arquivo
-      // que já pertenciam ao item, pra ninguém conseguir "roubar" um arquivo
-      // de outro item só citando o nome.
+      // e troca a capa (a primeira da lista). Só aceitamos URLs que já
+      // pertenciam ao item, pra ninguém conseguir "roubar" uma foto de
+      // outro item só citando a URL.
       if (req.body.existingImages !== undefined) {
         let keep;
         try {
@@ -688,34 +693,34 @@ app.put('/api/items/:id', requireAuth, (req, res) => {
         } catch {
           return res.status(400).json({ error: 'Lista de fotos inválida.' });
         }
-        const validFilenames = new Set(existing.images);
-        if (!Array.isArray(keep) || !keep.every((f) => typeof f === 'string' && validFilenames.has(f))) {
+        const validUrls = new Set(existing.images);
+        if (!Array.isArray(keep) || !keep.every((u) => typeof u === 'string' && validUrls.has(u))) {
           return res.status(400).json({ error: 'Lista de fotos inválida.' });
         }
         changes.images = keep;
       }
 
       if (req.files && req.files.length) {
-        let newFilenames;
+        let newUrls;
         try {
-          newFilenames = await Promise.all(req.files.map(saveUploadedImage));
+          newUrls = await Promise.all(req.files.map(saveUploadedImage));
         } catch (imgErr) {
           console.error('Erro ao processar imagem:', imgErr.message);
           return res.status(400).json({ error: 'Não foi possível processar uma das imagens enviadas.' });
         }
         const base = changes.images || existing.images;
-        changes.images = base.concat(newFilenames);
+        changes.images = base.concat(newUrls);
       }
 
       if (changes.images && changes.images.length > 6) {
         return res.status(400).json({ error: 'Máximo de 6 fotos por peça.' });
       }
 
-      const updated = itemsStore.update(req.params.id, changes);
+      const updated = await itemsStore.update(req.params.id, changes);
 
       if (changes.images) {
-        const removedFiles = existing.images.filter((f) => !changes.images.includes(f));
-        deleteImageFiles(removedFiles);
+        const removedUrls = existing.images.filter((u) => !changes.images.includes(u));
+        await deleteImageFiles(removedUrls);
       }
 
       res.json(toPublicItem(updated));
@@ -726,10 +731,10 @@ app.put('/api/items/:id', requireAuth, (req, res) => {
   });
 });
 
-app.delete('/api/items/:id', requireAuth, (req, res) => {
-  const removed = itemsStore.remove(req.params.id);
+app.delete('/api/items/:id', requireAuth, async (req, res) => {
+  const removed = await itemsStore.remove(req.params.id);
   if (!removed) return res.status(404).json({ error: 'Item não encontrado.' });
-  deleteImageFiles(removed.images);
+  await deleteImageFiles(removed.images);
   res.json({ ok: true });
 });
 
@@ -740,14 +745,14 @@ app.delete('/api/items/:id', requireAuth, (req, res) => {
 // Esta rota serve um HTML mínimo, já com as meta tags certas daquele item,
 // e manda navegadores de verdade direto para a vitrine (meta refresh + JS,
 // nenhum dos dois é seguido por crawlers de prévia).
-app.get('/item/:id', (req, res, next) => {
-  const item = itemsStore.getById(req.params.id);
+app.get('/item/:id', async (req, res, next) => {
+  const item = await itemsStore.getById(req.params.id);
   if (!item) return next();
 
   const title = `${item.name} — Tô Na Arara`;
   const priceLabel = Number(item.price).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   const description = `${priceLabel} · Tamanho ${item.size} · ${item.description}`.slice(0, 200);
-  const imageUrl = item.images[0] ? `${BASE_URL}/uploads/${item.images[0]}` : `${BASE_URL}/assets/img/logo.png`;
+  const imageUrl = item.images[0] || `${BASE_URL}/assets/img/logo.png`;
   const pageUrl = `${BASE_URL}/item/${item.id}`;
   const redirectPath = `/vitrine.html?item=${encodeURIComponent(item.id)}`;
 
@@ -781,18 +786,17 @@ app.get('/item/:id', (req, res, next) => {
 // Endpoints públicos (sem login) usados pelo site pra registrar visitas
 // anônimas e cliques. Nunca gravam nada enquanto o dono da loja está
 // logado no painel, pra não inflar as próprias estatísticas testando o
-// site. As telas do painel que vão mostrar esses números vêm numa fase
-// seguinte — aqui só alimentamos os dados.
+// site.
 
-app.post('/api/track/pageview', trackRateLimiter, (req, res) => {
-  if (req.session && req.session.loggedIn) return res.status(204).end();
+app.post('/api/track/pageview', trackRateLimiter, async (req, res) => {
+  if (getAuthPayload(req)) return res.status(204).end();
 
   const visitorId = getOrCreateVisitorId(req, res);
   const path = req.body && req.body.path;
   const referrer = req.body && req.body.referrer;
 
   if (typeof path === 'string' && path.startsWith('/') && path.length <= 200) {
-    visitsStore.record({
+    await visitsStore.record({
       id: crypto.randomUUID(),
       path,
       referrer: typeof referrer === 'string' && referrer.length <= 500 ? referrer : null,
@@ -805,8 +809,8 @@ app.post('/api/track/pageview', trackRateLimiter, (req, res) => {
   res.status(204).end();
 });
 
-app.post('/api/track/event', trackRateLimiter, (req, res) => {
-  if (req.session && req.session.loggedIn) return res.status(204).end();
+app.post('/api/track/event', trackRateLimiter, async (req, res) => {
+  if (getAuthPayload(req)) return res.status(204).end();
 
   const visitorId = getOrCreateVisitorId(req, res);
   const { type, itemId, query } = req.body || {};
@@ -816,7 +820,7 @@ app.post('/api/track/event', trackRateLimiter, (req, res) => {
   }
 
   if (itemId !== undefined) {
-    if (typeof itemId !== 'string' || !itemsStore.getById(itemId)) {
+    if (typeof itemId !== 'string' || !(await itemsStore.getById(itemId))) {
       return res.status(400).json({ error: 'Item não encontrado.' });
     }
   }
@@ -829,7 +833,7 @@ app.post('/api/track/event', trackRateLimiter, (req, res) => {
     cleanQuery = query.trim();
   }
 
-  eventsStore.record({
+  await eventsStore.record({
     id: crypto.randomUUID(),
     type,
     itemId: itemId || null,
@@ -845,25 +849,28 @@ app.post('/api/track/event', trackRateLimiter, (req, res) => {
 // Protegidas por login — só a loja vê isso. Alimentam a aba "Visão geral"
 // (números + gráfico) e a aba "Interessados" (quem clicou pra comprar).
 
-app.get('/api/admin/stats/summary', requireAuth, (req, res) => {
+app.get('/api/admin/stats/summary', requireAuth, async (req, res) => {
   const dias = parseDias(req.query.dias, 7);
   const since = Date.now() - dias * 24 * 60 * 60 * 1000;
 
-  const visits = visitsStore.getSummary({ since });
-  const whatsappByItem = eventsStore.getWhatsappClicksByItem({ since });
+  const visits = await visitsStore.getSummary({ since });
+  const whatsappByItem = await eventsStore.getWhatsappClicksByItem({ since });
   const whatsappClicks = whatsappByItem.reduce((sum, entry) => sum + entry.count, 0);
-  const topSearches = eventsStore.getTopSearches({ since, limit: 10 });
+  const topSearches = await eventsStore.getTopSearches({ since, limit: 10 });
 
-  const topViewedItems = eventsStore.getTopViewedItems({ since, limit: 5 }).map(({ itemId, count }) => {
-    const item = itemsStore.getById(itemId);
-    return {
-      itemId,
-      count,
-      name: item ? item.name : '(item removido)',
-      price: item ? item.price : null,
-      imageUrl: item && item.images[0] ? `/uploads/${item.images[0]}` : null,
-    };
-  });
+  const topViewedRaw = await eventsStore.getTopViewedItems({ since, limit: 5 });
+  const topViewedItems = await Promise.all(
+    topViewedRaw.map(async ({ itemId, count }) => {
+      const item = await itemsStore.getById(itemId);
+      return {
+        itemId,
+        count,
+        name: item ? item.name : '(item removido)',
+        price: item ? item.price : null,
+        imageUrl: item && item.images[0] ? item.images[0] : null,
+      };
+    })
+  );
 
   res.json({
     dias,
@@ -877,31 +884,33 @@ app.get('/api/admin/stats/summary', requireAuth, (req, res) => {
   });
 });
 
-app.get('/api/admin/stats/timeseries', requireAuth, (req, res) => {
+app.get('/api/admin/stats/timeseries', requireAuth, async (req, res) => {
   const dias = parseDias(req.query.dias, 30);
   const since = Date.now() - dias * 24 * 60 * 60 * 1000;
-  const { visitsByDay } = visitsStore.getSummary({ since });
+  const { visitsByDay } = await visitsStore.getSummary({ since });
   res.json({ dias, visitsByDay });
 });
 
-app.get('/api/admin/leads', requireAuth, (req, res) => {
+app.get('/api/admin/leads', requireAuth, async (req, res) => {
   const LIMIT = 100;
-  const allClicks = eventsStore.getWhatsappClickEvents();
+  const allClicks = await eventsStore.getWhatsappClickEvents();
   const hasMore = allClicks.length > LIMIT;
   const limited = allClicks.slice(0, LIMIT);
 
-  const leads = limited.map((event) => {
-    const item = event.itemId ? itemsStore.getById(event.itemId) : null;
-    return {
-      id: event.id,
-      timestamp: event.timestamp,
-      itemId: event.itemId,
-      itemName: item ? item.name : '(item removido)',
-      itemPrice: item ? item.price : null,
-      itemImageUrl: item && item.images[0] ? `/uploads/${item.images[0]}` : null,
-      itemStatus: item ? item.status : null,
-    };
-  });
+  const leads = await Promise.all(
+    limited.map(async (event) => {
+      const item = event.itemId ? await itemsStore.getById(event.itemId) : null;
+      return {
+        id: event.id,
+        timestamp: event.timestamp,
+        itemId: event.itemId,
+        itemName: item ? item.name : '(item removido)',
+        itemPrice: item ? item.price : null,
+        itemImageUrl: item && item.images[0] ? item.images[0] : null,
+        itemStatus: item ? item.status : null,
+      };
+    })
+  );
 
   res.json({ leads, hasMore });
 });
@@ -916,13 +925,13 @@ app.get('/api/admin/leads', requireAuth, (req, res) => {
 
 const PAYMENT_METHOD_MAX_LEN = 40;
 
-app.get('/api/admin/sales', requireAuth, (req, res) => {
+app.get('/api/admin/sales', requireAuth, async (req, res) => {
   const dias = parseDias(req.query.dias, 30);
   const since = Date.now() - dias * 24 * 60 * 60 * 1000;
-  res.json(salesStore.getSince(since));
+  res.json(await salesStore.getSince(since));
 });
 
-app.post('/api/admin/sales', requireAuth, (req, res) => {
+app.post('/api/admin/sales', requireAuth, async (req, res) => {
   const name = String((req.body && req.body.name) || '').trim();
   const price = Number(req.body && req.body.price);
   const category = String((req.body && req.body.category) || '').trim();
@@ -958,24 +967,24 @@ app.post('/api/admin/sales', requireAuth, (req, res) => {
     soldAt,
     createdAt: Date.now(),
   };
-  salesStore.create(sale);
+  await salesStore.create(sale);
   res.status(201).json(sale);
 });
 
-app.delete('/api/admin/sales/:id', requireAuth, (req, res) => {
-  const removed = salesStore.remove(req.params.id);
+app.delete('/api/admin/sales/:id', requireAuth, async (req, res) => {
+  const removed = await salesStore.remove(req.params.id);
   if (!removed) return res.status(404).json({ error: 'Venda não encontrada.' });
   res.json({ ok: true });
 });
 
-app.get('/api/admin/financeiro/summary', requireAuth, (req, res) => {
+app.get('/api/admin/financeiro/summary', requireAuth, async (req, res) => {
   const dias = parseDias(req.query.dias, 30);
   const since = Date.now() - dias * 24 * 60 * 60 * 1000;
 
-  const soldItems = itemsStore.getSoldSince(since);
+  const soldItems = await itemsStore.getSoldSince(since);
   const totalSite = soldItems.reduce((sum, item) => sum + item.price, 0);
 
-  const physicalSales = salesStore.getSince(since);
+  const physicalSales = await salesStore.getSince(since);
   const totalLoja = physicalSales.reduce((sum, sale) => sum + sale.price, 0);
 
   const transacoesSite = soldItems.map((item) => ({
@@ -1006,11 +1015,10 @@ app.get('/api/admin/financeiro/summary', requireAuth, (req, res) => {
 
 // ---------- Painel: gestão de permissões ----------
 // Só admin acessa (requireAdmin, mais estrito que requireAuth): é aqui que
-// se promove um colaborador a admin sem precisar editar backend/data/users.json
-// à mão nem rodar um script no terminal.
+// se promove um colaborador a admin sem precisar mexer direto no banco.
 
-app.get('/api/admin/users', requireAdmin, (req, res) => {
-  const users = usersStore.getAll().map((u) => ({
+app.get('/api/admin/users', requireAdmin, async (req, res) => {
+  const users = (await usersStore.getAll()).map((u) => ({
     id: u.id,
     username: u.username,
     email: u.email,
@@ -1020,25 +1028,25 @@ app.get('/api/admin/users', requireAdmin, (req, res) => {
   res.json(users);
 });
 
-app.put('/api/admin/users/:id/role', requireAdmin, (req, res) => {
+app.put('/api/admin/users/:id/role', requireAdmin, async (req, res) => {
   const role = (req.body && req.body.role) || '';
   if (!usersStore.ROLES.includes(role)) {
     return res.status(400).json({ error: 'Permissão inválida.' });
   }
 
-  const target = usersStore.findById(req.params.id);
+  const target = await usersStore.findById(req.params.id);
   if (!target) return res.status(404).json({ error: 'Conta não encontrada.' });
 
   // Nunca deixa a loja sem nenhum admin — senão ninguém mais consegue
-  // promover ninguém de volta sem mexer direto no arquivo.
+  // promover ninguém de volta sem mexer direto no banco.
   if (usersStore.isAdmin(target) && role !== 'admin') {
-    const totalAdmins = usersStore.getAll().filter(usersStore.isAdmin).length;
+    const totalAdmins = (await usersStore.getAll()).filter(usersStore.isAdmin).length;
     if (totalAdmins <= 1) {
       return res.status(409).json({ error: 'Não é possível remover o último administrador. Torne outra conta admin antes de remover esta.' });
     }
   }
 
-  const updated = usersStore.update(target.id, { role });
+  const updated = await usersStore.update(target.id, { role });
   res.json({
     id: updated.id,
     username: updated.username,
@@ -1051,9 +1059,10 @@ app.put('/api/admin/users/:id/role', requireAdmin, (req, res) => {
 // Opcional (DAILY_SUMMARY_EMAIL=true no .env): manda todo dia, uma vez, um
 // e-mail com visitas + cliques em "Comprar no WhatsApp" do dia anterior
 // para cada conta cadastrada no painel. Implementado com um setInterval que
-// confere a hora a cada 5 minutos — não é um agendador de verdade, então só
-// funciona enquanto o servidor está rodando no horário configurado; se o
-// servidor estiver desligado às 08:00, o resumo daquele dia não é enviado.
+// confere a hora a cada 5 minutos — só funciona enquanto uma instância do
+// servidor está de pé nesse horário; em função serverless (sem instância
+// contínua), isto só dispara em ambiente de desenvolvimento local (onde o
+// processo Node fica rodando o tempo todo).
 const DAILY_SUMMARY_HOUR = 8;
 let lastDailySummaryDay = null;
 
@@ -1062,9 +1071,9 @@ async function sendDailySummary() {
   const startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
   const startYesterday = startToday - 24 * 60 * 60 * 1000;
 
-  const totalVisits = visitsStore.countInRange(startYesterday, startToday);
-  const whatsappClicks = eventsStore.countInRange('whatsapp_click', startYesterday, startToday);
-  const recipients = usersStore.getAll().map((u) => u.email).filter(Boolean);
+  const totalVisits = await visitsStore.countInRange(startYesterday, startToday);
+  const whatsappClicks = await eventsStore.countInRange('whatsapp_click', startYesterday, startToday);
+  const recipients = (await usersStore.getAll()).map((u) => u.email).filter(Boolean);
 
   for (const email of recipients) {
     try {
@@ -1075,7 +1084,7 @@ async function sendDailySummary() {
   }
 }
 
-if (process.env.DAILY_SUMMARY_EMAIL === 'true') {
+if (process.env.DAILY_SUMMARY_EMAIL === 'true' && !process.env.VERCEL) {
   setInterval(() => {
     const now = new Date();
     const todayKey = now.toISOString().slice(0, 10);
@@ -1089,13 +1098,13 @@ if (process.env.DAILY_SUMMARY_EMAIL === 'true') {
 // ---------- Página não encontrada ----------
 // Sempre por último: qualquer rota GET que não bateu em nada acima (link de
 // peça vendida/removida, URL digitada errada) cai aqui. Rotas de API
-// recebem JSON (pra não quebrar quem está chamando a API), o resto recebe a
-// página 404 amigável do site.
+// recebem JSON (pra não quebrar quem está chamando a API); o resto é
+// mandado pra página 404 estática do site (servida direto pela Vercel).
 app.use((req, res) => {
   if (req.path.startsWith('/api/')) {
     return res.status(404).json({ error: 'Rota não encontrada.' });
   }
-  res.status(404).sendFile(path.join(SITE_DIR, '404.html'));
+  res.redirect('/404.html');
 });
 
 // ---------- Erros não tratados ----------
@@ -1111,11 +1120,19 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Ocorreu um erro inesperado. Tente novamente.' });
 });
 
-app.listen(PORT, () => {
-  console.log(`Tô Na Arara rodando em ${BASE_URL}`);
-  console.log(`Vitrine pública: ${BASE_URL}/vitrine.html`);
-  console.log(`Painel admin:    ${BASE_URL}/admin/login.html`);
-  if (!mailer.isConfigured()) {
-    console.log('Aviso: SMTP não configurado no .env — links de recuperação de senha só aparecem aqui no console.');
-  }
-});
+// Na Vercel, o servidor roda como função serverless (o handler exportado
+// abaixo é chamado a cada requisição) — não faz sentido abrir uma porta TCP
+// e ficar escutando. Localmente (desenvolvimento), continua funcionando como
+// um servidor Node comum.
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`Tô Na Arara rodando em ${BASE_URL}`);
+    console.log(`Vitrine pública: ${BASE_URL}/vitrine.html`);
+    console.log(`Painel admin:    ${BASE_URL}/admin/login.html`);
+    if (!mailer.isConfigured()) {
+      console.log('Aviso: SMTP não configurado no .env — links de recuperação de senha só aparecem aqui no console.');
+    }
+  });
+}
+
+module.exports = app;

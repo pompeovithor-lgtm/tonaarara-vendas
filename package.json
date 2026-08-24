@@ -1,0 +1,23 @@
+{
+  "name": "tonaarara-vendas",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Vitrine + painel do Tô Na Arara — cadastro de itens com preço, descrição e foto.",
+  "scripts": {
+    "start": "node backend/server.js",
+    "create-admin": "node backend/scripts/create-admin.js"
+  },
+  "dependencies": {
+    "@vercel/blob": "^2.8.0",
+    "@vercel/postgres": "^0.10.0",
+    "bcryptjs": "^3.0.3",
+    "compression": "^1.8.1",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.6.2",
+    "jsonwebtoken": "^9.0.3",
+    "multer": "^2.2.0",
+    "nodemailer": "^9.0.5",
+    "sharp": "^0.35.3"
+  }
+}

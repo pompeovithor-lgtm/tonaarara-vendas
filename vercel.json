@@ -1,0 +1,13 @@
+{
+  "version": 2,
+  "builds": [
+    { "src": "api/index.js", "use": "@vercel/node" },
+    { "src": "site-copy/**", "use": "@vercel/static" }
+  ],
+  "routes": [
+    { "src": "/api/(.*)", "dest": "/api/index.js" },
+    { "src": "/item/(.*)", "dest": "/api/index.js" },
+    { "src": "/$", "dest": "/site-copy/index.html" },
+    { "src": "/(.*)", "dest": "/site-copy/$1" }
+  ]
+}

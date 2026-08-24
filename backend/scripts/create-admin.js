@@ -5,7 +5,11 @@
  * ficar sem conseguir entrar (ex.: perdeu acesso ao e-mail também).
  *
  * Uso: npm run create-admin -- <usuario> <email> <senha>
+ * Precisa das variáveis de ambiente do Postgres (POSTGRES_URL) definidas —
+ * copie da aba Storage do projeto na Vercel para um .env local, ou rode
+ * com `vercel env pull` se tiver o Vercel CLI instalado.
  */
+require('dotenv').config();
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const usersStore = require('../usersStore');
@@ -30,23 +34,31 @@ if (password.length < 6) {
 
 const cleanEmail = email.trim().toLowerCase();
 
-if (usersStore.findByUsername(username)) {
-  console.error(`Já existe uma conta com o usuário "${username}". Use outro nome ou recupere a senha pelo painel.`);
-  process.exit(1);
-}
-if (usersStore.findByEmail(cleanEmail)) {
-  console.error(`Já existe uma conta com o e-mail "${cleanEmail}". Use outro e-mail ou recupere a senha pelo painel.`);
-  process.exit(1);
+async function main() {
+  if (await usersStore.findByUsername(username)) {
+    console.error(`Já existe uma conta com o usuário "${username}". Use outro nome ou recupere a senha pelo painel.`);
+    process.exit(1);
+  }
+  if (await usersStore.findByEmail(cleanEmail)) {
+    console.error(`Já existe uma conta com o e-mail "${cleanEmail}". Use outro e-mail ou recupere a senha pelo painel.`);
+    process.exit(1);
+  }
+
+  await usersStore.create({
+    id: crypto.randomUUID(),
+    username,
+    email: cleanEmail,
+    passwordHash: bcrypt.hashSync(password, 10),
+    role: (await usersStore.count()) === 0 ? 'admin' : 'colaborador',
+    resetTokenHash: null,
+    resetTokenExpires: null,
+    createdAt: Date.now(),
+  });
+
+  console.log(`Conta "${username}" (${cleanEmail}) criada com sucesso no banco de dados.`);
 }
 
-usersStore.create({
-  id: crypto.randomUUID(),
-  username,
-  email: cleanEmail,
-  passwordHash: bcrypt.hashSync(password, 10),
-  resetTokenHash: null,
-  resetTokenExpires: null,
-  createdAt: Date.now(),
+main().catch((err) => {
+  console.error('Erro ao criar conta:', err);
+  process.exit(1);
 });
-
-console.log(`Conta "${username}" (${cleanEmail}) criada com sucesso em backend/data/users.json`);

@@ -457,7 +457,7 @@ function formatarDataCurta(dataISO) {
 
     var MAX_IMAGES = 6;
     var todosItens = [];
-    var existingImages = []; // nomes de arquivo (não URL) das fotos já salvas, na ordem — a primeira é a capa
+    var existingImages = []; // URLs das fotos já salvas, na ordem — a primeira é a capa
     var deepLinkAplicado = false; // só tenta abrir o item vindo de "?edit=" uma vez
 
     function syncExistingImagesField() {
@@ -470,12 +470,12 @@ function formatarDataCurta(dataISO) {
     function renderImagePreview() {
       imagePreview.innerHTML = '';
 
-      existingImages.forEach(function (filename, index) {
+      existingImages.forEach(function (url, index) {
         var thumb = document.createElement('div');
         thumb.className = 'image-thumb';
 
         var img = document.createElement('img');
-        img.src = '/uploads/' + filename;
+        img.src = url;
         img.alt = '';
         thumb.appendChild(img);
 
@@ -495,7 +495,7 @@ function formatarDataCurta(dataISO) {
           capaBtn.textContent = 'Usar como capa';
           capaBtn.addEventListener('click', function () {
             existingImages.splice(index, 1);
-            existingImages.unshift(filename);
+            existingImages.unshift(url);
             syncExistingImagesField();
             renderImagePreview();
           });
@@ -560,9 +560,7 @@ function formatarDataCurta(dataISO) {
       form.status.value = item.status || 'disponivel';
       form.description.value = item.description;
       imagesInput.value = '';
-      existingImages = (item.imageUrls || []).map(function (url) {
-        return url.split('/').pop();
-      });
+      existingImages = (item.imageUrls || []).slice();
       syncExistingImagesField();
       renderImagePreview();
       formTitle.textContent = 'Editar item';

@@ -1,43 +1,19 @@
-const fs = require('fs');
-const path = require('path');
+const { sql, ensureSchema } = require('./db');
 
-const DATA_FILE = path.join(__dirname, 'data', 'categories.json');
-
-function ensureFile() {
-  if (!fs.existsSync(DATA_FILE)) {
-    fs.mkdirSync(path.dirname(DATA_FILE), { recursive: true });
-    fs.writeFileSync(DATA_FILE, '[]', 'utf8');
-  }
-}
-
-function readCategories() {
-  ensureFile();
-  const raw = fs.readFileSync(DATA_FILE, 'utf8');
-  try {
-    return JSON.parse(raw);
-  } catch {
-    return [];
-  }
-}
-
-function writeCategories(categories) {
-  ensureFile();
-  fs.writeFileSync(DATA_FILE, JSON.stringify(categories, null, 2), 'utf8');
-}
-
-function getAll() {
-  return readCategories().sort((a, b) => a.localeCompare(b, 'pt-BR'));
+async function getAll() {
+  await ensureSchema();
+  const { rows } = await sql`SELECT name FROM categories`;
+  return rows.map((r) => r.name).sort((a, b) => a.localeCompare(b, 'pt-BR'));
 }
 
 // Garante que a categoria exista na lista (sem duplicar por causa de
 // maiúscula/minúscula) e devolve o nome já cadastrado, se houver.
-function ensure(name) {
+async function ensure(name) {
+  await ensureSchema();
   const clean = name.trim();
-  const categories = readCategories();
-  const existing = categories.find((c) => c.toLowerCase() === clean.toLowerCase());
-  if (existing) return existing;
-  categories.push(clean);
-  writeCategories(categories);
+  const { rows } = await sql`SELECT name FROM categories WHERE LOWER(name) = ${clean.toLowerCase()}`;
+  if (rows[0]) return rows[0].name;
+  await sql`INSERT INTO categories (name) VALUES (${clean}) ON CONFLICT (name) DO NOTHING`;
   return clean;
 }
 
@@ -45,35 +21,32 @@ function ensure(name) {
 // nome novo (ignorando maiúscula/minúscula), não duplica — só remove a
 // antiga, deixando as duas fundidas em uma. Devolve o nome salvo, ou null
 // se a categoria antiga não existia.
-function rename(oldName, newName) {
-  const categories = readCategories();
-  const index = categories.findIndex((c) => c.toLowerCase() === oldName.toLowerCase());
-  if (index === -1) return null;
+async function rename(oldName, newName) {
+  await ensureSchema();
+  const oldNeedle = oldName.trim().toLowerCase();
+  const { rows: existingRows } = await sql`SELECT name FROM categories WHERE LOWER(name) = ${oldNeedle}`;
+  if (!existingRows[0]) return null;
 
   const clean = newName.trim();
-  const duplicateIndex = categories.findIndex(
-    (c, i) => i !== index && c.toLowerCase() === clean.toLowerCase()
-  );
+  const { rows: dupRows } = await sql`
+    SELECT name FROM categories WHERE LOWER(name) = ${clean.toLowerCase()} AND LOWER(name) != ${oldNeedle}
+  `;
 
-  if (duplicateIndex !== -1) {
-    categories.splice(index, 1);
+  if (dupRows[0]) {
+    await sql`DELETE FROM categories WHERE LOWER(name) = ${oldNeedle}`;
   } else {
-    categories[index] = clean;
+    await sql`UPDATE categories SET name = ${clean} WHERE LOWER(name) = ${oldNeedle}`;
   }
 
-  writeCategories(categories);
   return clean;
 }
 
 // Remove uma categoria da lista. Não verifica se está em uso — quem chama
 // (server.js) decide isso antes, consultando itemsStore.isCategoryInUse.
-function remove(name) {
-  const categories = readCategories();
-  const index = categories.findIndex((c) => c.toLowerCase() === name.toLowerCase());
-  if (index === -1) return false;
-  categories.splice(index, 1);
-  writeCategories(categories);
-  return true;
+async function remove(name) {
+  await ensureSchema();
+  const { rowCount } = await sql`DELETE FROM categories WHERE LOWER(name) = ${name.toLowerCase()}`;
+  return rowCount > 0;
 }
 
 module.exports = { getAll, ensure, rename, remove };

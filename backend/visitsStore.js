@@ -1,34 +1,11 @@
-const fs = require('fs');
-const path = require('path');
+const { sql, ensureSchema } = require('./db');
 
-const DATA_FILE = path.join(__dirname, 'data', 'visits.json');
-
-function ensureFile() {
-  if (!fs.existsSync(DATA_FILE)) {
-    fs.mkdirSync(path.dirname(DATA_FILE), { recursive: true });
-    fs.writeFileSync(DATA_FILE, '[]', 'utf8');
-  }
-}
-
-function readVisits() {
-  ensureFile();
-  const raw = fs.readFileSync(DATA_FILE, 'utf8');
-  try {
-    return JSON.parse(raw);
-  } catch {
-    return [];
-  }
-}
-
-function writeVisits(visits) {
-  ensureFile();
-  fs.writeFileSync(DATA_FILE, JSON.stringify(visits, null, 2), 'utf8');
-}
-
-function record(visit) {
-  const visits = readVisits();
-  visits.push(visit);
-  writeVisits(visits);
+async function record(visit) {
+  await ensureSchema();
+  await sql`
+    INSERT INTO visits (id, path, referrer, visitor_id, device, timestamp)
+    VALUES (${visit.id}, ${visit.path}, ${visit.referrer || null}, ${visit.visitorId}, ${visit.device || null}, ${visit.timestamp})
+  `;
   return visit;
 }
 
@@ -36,12 +13,19 @@ function toDayKey(timestamp) {
   return new Date(timestamp).toISOString().slice(0, 10);
 }
 
-// Resumo usado pelo painel (fase seguinte): total de visitas, visitantes
-// únicos, série diária contínua (sem "buracos") desde `since` até hoje,
-// páginas mais visitadas e de onde os visitantes vieram.
-function getSummary({ since } = {}) {
+// Resumo usado pelo painel: total de visitas, visitantes únicos, série
+// diária contínua (sem "buracos") desde `since` até hoje, páginas mais
+// visitadas e de onde os visitantes vieram.
+async function getSummary({ since } = {}) {
+  await ensureSchema();
   const cutoff = since || Date.now() - 13 * 24 * 60 * 60 * 1000; // padrão: últimos 14 dias
-  const visits = readVisits().filter((v) => v.timestamp >= cutoff);
+  const { rows } = await sql`SELECT * FROM visits WHERE timestamp >= ${cutoff}`;
+  const visits = rows.map((r) => ({
+    path: r.path,
+    referrer: r.referrer,
+    visitorId: r.visitor_id,
+    timestamp: Number(r.timestamp),
+  }));
 
   const totalVisits = visits.length;
   const uniqueVisitors = new Set(visits.map((v) => v.visitorId)).size;
@@ -84,10 +68,11 @@ function getSummary({ since } = {}) {
 }
 
 // Conta visitas num intervalo fechado-aberto [since, until) — usado pelo
-// resumo diário por e-mail, que precisa do total de exatamente "ontem",
-// diferente de getSummary() (que conta tudo desde um ponto até agora).
-function countInRange(since, until) {
-  return readVisits().filter((v) => v.timestamp >= since && v.timestamp < until).length;
+// resumo diário por e-mail, que precisa do total de exatamente "ontem".
+async function countInRange(since, until) {
+  await ensureSchema();
+  const { rows } = await sql`SELECT COUNT(*)::int AS c FROM visits WHERE timestamp >= ${since} AND timestamp < ${until}`;
+  return rows[0].c;
 }
 
 module.exports = { record, getSummary, countInRange };

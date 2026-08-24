@@ -1,60 +1,45 @@
-const fs = require('fs');
-const path = require('path');
+const { sql, ensureSchema } = require('./db');
 
-const DATA_FILE = path.join(__dirname, 'data', 'sales.json');
-
-function ensureFile() {
-  if (!fs.existsSync(DATA_FILE)) {
-    fs.mkdirSync(path.dirname(DATA_FILE), { recursive: true });
-    fs.writeFileSync(DATA_FILE, '[]', 'utf8');
-  }
-}
-
-function readSales() {
-  ensureFile();
-  const raw = fs.readFileSync(DATA_FILE, 'utf8');
-  try {
-    return JSON.parse(raw);
-  } catch {
-    return [];
-  }
-}
-
-function writeSales(sales) {
-  ensureFile();
-  fs.writeFileSync(DATA_FILE, JSON.stringify(sales, null, 2), 'utf8');
+function mapRow(row) {
+  return {
+    id: row.id,
+    name: row.name,
+    price: Number(row.price),
+    category: row.category,
+    paymentMethod: row.payment_method,
+    soldAt: Number(row.sold_at),
+    createdAt: Number(row.created_at),
+  };
 }
 
 // Vendas feitas na loja física (fora do catálogo da vitrine) — um registro
 // à parte, sem ligação com itemsStore. Mais recente primeiro.
-function getAll() {
-  return readSales().sort((a, b) => b.soldAt - a.soldAt);
+async function getAll() {
+  await ensureSchema();
+  const { rows } = await sql`SELECT * FROM sales ORDER BY sold_at DESC`;
+  return rows.map(mapRow);
 }
 
-// Vendas com soldAt a partir de "since" — mesmo padrão de "since" (sem
-// limite superior, sempre até agora) usado nas outras rotas de estatística
-// do painel. Alimenta o total "vendido na loja física" do Financeiro.
-function getSince(since) {
+async function getSince(since) {
+  await ensureSchema();
   const cutoff = since || 0;
-  return readSales()
-    .filter((sale) => sale.soldAt >= cutoff)
-    .sort((a, b) => b.soldAt - a.soldAt);
+  const { rows } = await sql`SELECT * FROM sales WHERE sold_at >= ${cutoff} ORDER BY sold_at DESC`;
+  return rows.map(mapRow);
 }
 
-function create(sale) {
-  const sales = readSales();
-  sales.push(sale);
-  writeSales(sales);
+async function create(sale) {
+  await ensureSchema();
+  await sql`
+    INSERT INTO sales (id, name, price, category, payment_method, sold_at, created_at)
+    VALUES (${sale.id}, ${sale.name}, ${sale.price}, ${sale.category}, ${sale.paymentMethod}, ${sale.soldAt}, ${sale.createdAt})
+  `;
   return sale;
 }
 
-function remove(id) {
-  const sales = readSales();
-  const index = sales.findIndex((sale) => sale.id === id);
-  if (index === -1) return null;
-  const [removed] = sales.splice(index, 1);
-  writeSales(sales);
-  return removed;
+async function remove(id) {
+  await ensureSchema();
+  const { rows } = await sql`DELETE FROM sales WHERE id = ${id} RETURNING *`;
+  return rows[0] ? mapRow(rows[0]) : null;
 }
 
 module.exports = {
