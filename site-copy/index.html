@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Tô Na Arara</title>
+
+<!--
+  Script inline (única exceção à regra de manter JS em js/script.js):
+  precisa rodar antes da página desenhar na tela para evitar um "flash" de
+  conteúdo visível que depois some. Ele só marca que o JavaScript está
+  disponível; toda a lógica de verdade mora em js/script.js.
+-->
+<script>document.documentElement.classList.add('js');</script>
+<meta name="description" content="Tô Na Arara — brechó e artigos vintage em Morro das Pedras, Florianópolis." />
+
+<!-- Open Graph / Twitter Card: como o link aparece ao ser compartilhado no
+     WhatsApp, Instagram etc. Os caminhos de imagem são relativos a esta
+     página; a maioria dos crawlers de prévia os resolve certo, mas o ideal
+     é ter BASE_URL configurado e, se possível, trocar por URLs absolutas
+     ao publicar em produção. -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Tô Na Arara">
+<meta property="og:title" content="Tô Na Arara — brechó e artigos vintage">
+<meta property="og:description" content="Peças únicas com curadoria em Morro das Pedras, Florianópolis. Vem garimpar!">
+<meta property="og:image" content="assets/img/logo.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Tô Na Arara — brechó e artigos vintage">
+<meta name="twitter:description" content="Peças únicas com curadoria em Morro das Pedras, Florianópolis. Vem garimpar!">
+<meta name="twitter:image" content="assets/img/logo.png">
+
+<!-- Ícone da aba do navegador (recortado da logo real da loja) -->
+<link rel="icon" type="image/png" href="assets/img/favicon.png">
+
+<!-- Fontes do Google Fonts: "Fredoka" (títulos, arredondada) e "Work Sans" (textos) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<!-- Estilos do site (cores, tipografia, layout) -->
+<link rel="stylesheet" href="css/style.css">
+<!-- Reaproveitado aqui pra estilizar a prévia da vitrine na home (mesmos
+     cartões de peça da página vitrine.html) -->
+<link rel="stylesheet" href="css/vitrine.css">
+</head>
+<body>
+
+<!-- =========================================================
+     CABEÇALHO
+     Logo/mascote + menu de navegação fixo no topo da página.
+     ========================================================= -->
+<header>
+  <div class="container nav">
+    <a class="brand" href="#topo">
+      <img src="assets/img/logo.png" alt="Tô Na Arara — brechó e artigos vintage" width="48" height="48" />
+    </a>
+    <ul class="nav-links">
+      <li><a href="#sobre">Sobre</a></li>
+      <li><a href="#diferenciais">Diferenciais</a></li>
+      <li><a href="vitrine.html">Vitrine</a></li>
+      <li><a href="#local">Localização</a></li>
+    </ul>
+    <div class="nav-cta">
+      <a class="btn btn-outline" href="https://www.instagram.com/tonaarara.brecho/" target="_blank" rel="noopener" style="color:var(--crimson-dark); border-color:var(--crimson-dark);">Instagram</a>
+      <a class="btn btn-mustard" href="#local">Como chegar</a>
+      <!-- Acesso da loja ao painel de cadastro de itens -->
+      <a class="btn-login" href="admin/login.html" aria-label="Login da loja" title="Login da loja">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="8" r="4"/></svg>
+      </a>
+      <!-- Botão "hamburguer", só some/aparece em telas pequenas (ver script.js e style.css) -->
+      <button class="menu-toggle" aria-label="Abrir menu" id="menuToggle">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main id="topo">
+
+  <!-- =========================================================
+       HERO
+       Primeira coisa que o visitante vê: chamada principal,
+       botões de ação e a ilustração do papagaio (mascote).
+       ========================================================= -->
+  <section class="hero">
+    <div class="hero-blob" aria-hidden="true">
+      <svg viewBox="0 0 1200 600" preserveAspectRatio="xMidYMid slice">
+        <circle cx="1050" cy="80" r="240" fill="rgba(242,169,59,0.16)"/>
+        <circle cx="90" cy="560" r="200" fill="rgba(47,110,142,0.18)"/>
+        <circle cx="620" cy="640" r="260" fill="rgba(251,241,225,0.06)"/>
+        <!-- pontinhos soltos, dão um ar de confete/vintage sem pesar;
+             ficam do lado direito (perto da ilustração) e numa faixa alta
+             à esquerda, longe do título e do texto -->
+        <circle cx="880" cy="420" r="9" fill="rgba(251,241,225,0.45)"/>
+        <circle cx="960" cy="330" r="6" fill="rgba(242,169,59,0.55)"/>
+        <circle cx="760" cy="170" r="6" fill="rgba(251,241,225,0.4)"/>
+        <circle cx="1130" cy="230" r="6" fill="rgba(251,241,225,0.4)"/>
+        <circle cx="1010" cy="520" r="5" fill="rgba(242,169,59,0.5)"/>
+        <circle cx="150" cy="42" r="6" fill="rgba(251,241,225,0.4)"/>
+        <circle cx="340" cy="50" r="5" fill="rgba(242,169,59,0.5)"/>
+      </svg>
+    </div>
+    <div class="hero-wave" aria-hidden="true">
+      <svg viewBox="0 0 1440 100" preserveAspectRatio="none">
+        <path d="M0,40 C240,90 480,0 720,30 C960,60 1200,10 1440,50 L1440,100 L0,100 Z"/>
+      </svg>
+    </div>
+    <div class="container">
+      <div class="hero-copy">
+        <span class="eyebrow hero-eyebrow">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v6M12 2l4 3M12 2 8 5"/></svg>
+          Brechó no Morro das Pedras
+        </span>
+        <h1>Moda com história, estilo com alma.</h1>
+        <p class="lead">Peças second hand garimpadas com carinho para quem ama compor looks únicos — sem pesar no bolso nem no planeta.</p>
+        <div class="hero-actions">
+          <a class="btn btn-mustard" href="#local">Ver localização</a>
+          <a class="btn btn-outline" href="https://www.instagram.com/tonaarara.brecho/" target="_blank" rel="noopener" style="border-color: var(--cream);">Seguir no Instagram</a>
+        </div>
+        <div class="hero-badges">
+          <span class="hero-badge">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+            Novidades toda semana
+          </span>
+          <span class="hero-badge">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 8.6c0 5-8.8 10.4-8.8 10.4S3.2 13.6 3.2 8.6a4.6 4.6 0 0 1 8.8-1.9 4.6 4.6 0 0 1 8.8 1.9Z"/></svg>
+            Curadoria feita a dedo
+          </span>
+        </div>
+      </div>
+      <!-- Logo real da loja, usada como imagem principal do hero -->
+      <div class="hero-art">
+        <img src="assets/img/logo.png" alt="Logo Tô Na Arara — brechó e artigos vintage" />
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================================================
+       VITRINE (prévia)
+       Mostra algumas peças disponíveis direto na home, pra não
+       obrigar quem está navegando a sair pra outra página só pra
+       ver o que tem à venda. "Ver vitrine completa" leva pro
+       catálogo cheio, com busca e filtros (vitrine.html). Os
+       cartões são montados via JS em js/home-vitrine.js.
+       ========================================================= -->
+  <section class="section vitrine-home" id="vitrine-destaque">
+    <div class="container">
+      <div class="head reveal">
+        <span class="eyebrow">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V5a3 3 0 0 1 6 0v4M6 9h12l1 11H5L6 9Z"/></svg>
+          Vitrine
+        </span>
+        <h2>Peças disponíveis agora</h2>
+        <p class="lead">Uma prévia do que chegou por aqui — o estoque é atualizado direto pela loja.</p>
+      </div>
+      <p id="vitrineHomeStatus" class="vitrine-status" hidden></p>
+      <div id="vitrineHomeGrid" class="vitrine-grid"></div>
+      <div class="vitrine-home-cta">
+        <a class="btn btn-mustard" href="vitrine.html">Ver vitrine completa</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================================================
+       SOBRE NÓS
+       Texto genérico de apresentação da loja (edite à vontade)
+       + um cartão com 3 destaques rápidos.
+       ========================================================= -->
+  <section class="section sobre" id="sobre">
+    <div class="container">
+      <div class="reveal">
+        <span class="eyebrow">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 8.6c0 5-8.8 10.4-8.8 10.4S3.2 13.6 3.2 8.6a4.6 4.6 0 0 1 8.8-1.9 4.6 4.6 0 0 1 8.8 1.9Z"/></svg>
+          Sobre nós
+        </span>
+        <h2>Cada peça carrega uma história — a próxima pode ser sua.</h2>
+        <p>O Tô Na Arara nasceu do amor por moda com personalidade. Cada peça que chega até você passa por uma curadoria cuidadosa, escolhida a dedo entre roupas, acessórios e calçados em ótimo estado, para que você monte looks únicos sem abrir mão de qualidade e estilo.</p>
+        <p>Acreditamos que dar uma segunda vida às roupas é também cuidar do planeta. Por isso, cada visita à loja é uma nova oportunidade de descoberta: sempre tem uma peça esperando para contar uma história ao seu lado.</p>
+      </div>
+      <div class="sobre-card reveal">
+        <svg class="doodle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></svg>
+        <div class="stat-row">
+          <div class="stat">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V5a3 3 0 0 1 6 0v4M6 9h12l1 11H5L6 9Z"/></svg>
+            <div><strong>Curadoria própria</strong><span>Toda peça é conferida antes de chegar ao cabideiro.</span></div>
+          </div>
+          <div class="stat">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-4.6-9.5-9C.7 8.4 2 4.5 5.8 4a5 5 0 0 1 6.2 3 5 5 0 0 1 6.2-3c3.8.5 5.1 4.4 3.3 8-2.5 4.4-9.5 9-9.5 9Z"/></svg>
+            <div><strong>Moda consciente</strong><span>Comprar de segunda mão é um gesto pelo planeta.</span></div>
+          </div>
+          <div class="stat">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+            <div><strong>Sempre novidades</strong><span>O estoque se renova toda semana, vale a pena voltar.</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================================================
+       DIFERENCIAIS
+       Grade de 4 cartões respondendo "por que comprar aqui".
+       ========================================================= -->
+  <section class="section diferenciais" id="diferenciais">
+    <div class="container">
+      <div class="head reveal">
+        <span class="eyebrow">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3v4M3 5h4M19 13v4M17 15h4M10 3l1.8 5.2L17 10l-5.2 1.8L10 17l-1.8-5.2L3 10l5.2-1.8L10 3Z"/></svg>
+          Por que garimpar aqui
+        </span>
+        <h2>Um brechó pensado em cada detalhe</h2>
+      </div>
+      <div class="cards-grid">
+        <div class="card reveal">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V5a3 3 0 0 1 6 0v4M6 9h12l1 11H5L6 9Z"/></svg>
+          <h3>Curadoria a dedo</h3>
+          <p>Selecionamos cada peça olhando caimento, qualidade e estilo.</p>
+        </div>
+        <div class="card reveal">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12 12 20l-8.5-8.5a3 3 0 0 1 0-4.2l3-3a3 3 0 0 1 4.2 0L12 5.6l1.3-1.3a3 3 0 0 1 4.2 0l3 3a3 3 0 0 1 0 4.2Z"/><circle cx="12.5" cy="9.5" r="1"/></svg>
+          <h3>Preço justo</h3>
+          <p>Moda boa não precisa custar caro — preços pensados pro seu bolso.</p>
+        </div>
+        <div class="card reveal">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-4.6-9.5-9C.7 8.4 2 4.5 5.8 4a5 5 0 0 1 6.2 3 5 5 0 0 1 6.2-3c3.8.5 5.1 4.4 3.3 8-2.5 4.4-9.5 9-9.5 9Z"/></svg>
+          <h3>Moda circular</h3>
+          <p>Comprar e vender no brechó ajuda a reduzir o descarte têxtil.</p>
+        </div>
+        <div class="card reveal">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+          <h3>Novidades toda semana</h3>
+          <p>O mix muda com frequência — sempre tem algo novo pra descobrir.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================================================
+       LOCALIZAÇÃO
+       Endereço completo, horário, WhatsApp e link para o mapa.
+       ========================================================= -->
+  <section class="section local" id="local">
+    <div class="hero-blob" aria-hidden="true" style="opacity:0.5;">
+      <svg viewBox="0 0 1200 600" preserveAspectRatio="xMidYMid slice">
+        <circle cx="1100" cy="500" r="240" fill="rgba(242,169,59,0.08)"/>
+      </svg>
+    </div>
+    <div class="container">
+      <div class="reveal">
+        <span class="eyebrow">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.5 7-12a7 7 0 1 0-14 0c0 5.5 7 12 7 12Z"/><circle cx="12" cy="9" r="2.4"/></svg>
+          Venha nos visitar
+        </span>
+        <h2>Encontre a loja em Morro das Pedras</h2>
+        <p class="lead">Fica pertinho da praia, num cantinho tranquilo de Florianópolis. Separe um tempo pra garimpar com calma.</p>
+        <div class="info-list">
+          <div class="info-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.5 7-12a7 7 0 1 0-14 0c0 5.5 7 12 7 12Z"/><circle cx="12" cy="9" r="2.4"/></svg>
+            <div><strong>Endereço</strong><span>Rua Francisco Vieira, 358 — Morro das Pedras, Florianópolis/SC</span></div>
+          </div>
+          <div class="info-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+            <div><strong>Horário</strong><span>Terça a sábado, das 10h às 18h (edite conforme seu funcionamento)</span></div>
+          </div>
+          <div class="info-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5.5A2.5 2.5 0 0 1 5.5 3H8l2 5-2.5 1.5a12 12 0 0 0 6 6L15 13l5 2v2.5A2.5 2.5 0 0 1 17.5 20 14.5 14.5 0 0 1 3 5.5Z"/></svg>
+            <div><strong>WhatsApp</strong><span>+55 48 8466-9105</span></div>
+          </div>
+        </div>
+        <div class="local-actions">
+          <a class="btn btn-mustard" href="https://www.google.com/maps/search/?api=1&query=Rua+Francisco+Vieira%2C+358+Morro+das+Pedras+Florian%C3%B3polis+SC+88066010" target="_blank" rel="noopener">Ver no mapa</a>
+          <a class="btn btn-outline" href="https://wa.me/554884669105?text=Ol%C3%A1!%20Vim%20pelo%20site%20do%20T%C3%B4%20Na%20Arara%20e%20queria%20saber%20mais." target="_blank" rel="noopener" style="border-color: var(--cream);">Chamar no WhatsApp</a>
+        </div>
+      </div>
+      <div class="map-card reveal">
+        <div class="pin-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.5 7-12a7 7 0 1 0-14 0c0 5.5 7 12 7 12Z"/><circle cx="12" cy="9" r="2.4"/></svg>
+        </div>
+        <strong style="font-family:'Fredoka',sans-serif; font-size:19px;">Tô Na Arara</strong>
+        <address>
+          Rua Francisco Vieira, 358<br/>
+          Morro das Pedras, Florianópolis — SC
+          <span class="cep">CEP 88066-010</span>
+        </address>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- =========================================================
+     RODAPÉ
+     Marca, navegação secundária e dados de contato.
+     ========================================================= -->
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-brand">
+          <img src="assets/img/logo.png" alt="Tô Na Arara — brechó e artigos vintage" width="40" height="40" />
+          Tô Na Arara
+        </div>
+        <p>Brechó e artigos vintage garimpados com carinho em Morro das Pedras, Florianópolis. Venha descobrir sua próxima peça favorita.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Navegação</h4>
+        <ul>
+          <li><a href="#sobre">Sobre nós</a></li>
+          <li><a href="#diferenciais">Diferenciais</a></li>
+          <li><a href="vitrine.html">Vitrine</a></li>
+          <li><a href="#local">Localização</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Contato</h4>
+        <ul>
+          <li><a href="https://www.instagram.com/tonaarara.brecho/" target="_blank" rel="noopener">Instagram</a></li>
+          <li><a href="https://wa.me/554884669105?text=Ol%C3%A1!%20Vim%20pelo%20site%20do%20T%C3%B4%20Na%20Arara%20e%20queria%20saber%20mais." target="_blank" rel="noopener">WhatsApp</a></li>
+          <li><a href="#">Rua Francisco Vieira, 358 — Morro das Pedras, Florianópolis/SC, 88066-010</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© <span id="year"></span> Tô Na Arara. Todos os direitos reservados.</span>
+      <span>Feito com carinho em Florianópolis 🦜</span>
+    </div>
+  </div>
+</footer>
+
+<!-- Scripts da página (ano dinâmico + menu mobile + prévia da vitrine) -->
+<script src="js/script.js" defer></script>
+<script src="js/tracking.js" defer></script>
+<script src="js/home-vitrine.js" defer></script>
+
+</body>
+</html>

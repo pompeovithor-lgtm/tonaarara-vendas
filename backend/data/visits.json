@@ -1,0 +1,130 @@
+[
+  {
+    "id": "91458438-1309-4152-9d57-8d7db47917dc",
+    "path": "/vitrine.html",
+    "referrer": null,
+    "visitorId": "84db2bdd-bd24-4bd8-ab7a-e39ed2cca3f2",
+    "device": "desktop",
+    "timestamp": 1787377687611
+  },
+  {
+    "id": "1968c105-018f-4242-b250-774b8477e849",
+    "path": "/vitrine.html",
+    "referrer": null,
+    "visitorId": "1ab4c6ca-2296-4a86-b0b5-e83ed18d0cb3",
+    "device": "desktop",
+    "timestamp": 1787410383568
+  },
+  {
+    "id": "fc0154c3-1fb6-46f2-b66b-d021737d7551",
+    "path": "/index.html",
+    "referrer": "http://localhost:3000/vitrine.html",
+    "visitorId": "1ab4c6ca-2296-4a86-b0b5-e83ed18d0cb3",
+    "device": "desktop",
+    "timestamp": 1787410392236
+  },
+  {
+    "id": "8533bc88-937d-4962-a13b-1744057f08eb",
+    "path": "/index.html",
+    "referrer": null,
+    "visitorId": "bc7bbada-8958-4ee8-ad25-1a3d835e5ad3",
+    "device": "desktop",
+    "timestamp": 1787410814013
+  },
+  {
+    "id": "5892942e-55e4-4949-a739-a57947c2a631",
+    "path": "/index.html",
+    "referrer": "http://localhost:3000/_debug.html",
+    "visitorId": "8d00a30c-7c9f-482f-a3ed-c4b122f0d276",
+    "device": "desktop",
+    "timestamp": 1787410831769
+  },
+  {
+    "id": "ae3eaefb-cdcc-445c-88c6-550faa3025f6",
+    "path": "/index.html",
+    "referrer": null,
+    "visitorId": "eaab5d9a-3c27-42af-936f-4458e3df4452",
+    "device": "desktop",
+    "timestamp": 1787410846907
+  },
+  {
+    "id": "d2437959-a65a-4f1c-aafd-1f1582a540c7",
+    "path": "/index.html",
+    "referrer": "http://localhost:3000/_debug.html",
+    "visitorId": "10eb8b66-0317-48f1-b90c-8c5b18a4b45e",
+    "device": "desktop",
+    "timestamp": 1787410871269
+  },
+  {
+    "id": "d3f7b130-3e8e-4978-99ec-4a83b221e4a2",
+    "path": "/index.html",
+    "referrer": null,
+    "visitorId": "3696e918-bb6c-48fa-bd8b-b7b95cbe2f53",
+    "device": "desktop",
+    "timestamp": 1787410881327
+  },
+  {
+    "id": "b40fa91c-129b-4378-9dfc-3ff3aeaaf005",
+    "path": "/index.html",
+    "referrer": "http://localhost:3000/vitrine.html",
+    "visitorId": "1ab4c6ca-2296-4a86-b0b5-e83ed18d0cb3",
+    "device": "desktop",
+    "timestamp": 1787410914851
+  },
+  {
+    "id": "f0570830-aa12-48d8-b4d8-54495372c195",
+    "path": "/vitrine.html",
+    "referrer": "http://localhost:3000/index.html",
+    "visitorId": "1ab4c6ca-2296-4a86-b0b5-e83ed18d0cb3",
+    "device": "desktop",
+    "timestamp": 1787410920478
+  },
+  {
+    "id": "59bf7546-7a06-402f-ab47-28c8431d2c68",
+    "path": "/index.html",
+    "referrer": "http://localhost:3000/vitrine.html",
+    "visitorId": "1ab4c6ca-2296-4a86-b0b5-e83ed18d0cb3",
+    "device": "desktop",
+    "timestamp": 1787410933912
+  },
+  {
+    "id": "47f13fdc-91ea-485d-b56d-8dd8e9901cf2",
+    "path": "/vitrine.html",
+    "referrer": "http://localhost:3000/index.html",
+    "visitorId": "1ab4c6ca-2296-4a86-b0b5-e83ed18d0cb3",
+    "device": "desktop",
+    "timestamp": 1787410938792
+  },
+  {
+    "id": "3e234350-3018-4968-b058-5888f4a2f6a9",
+    "path": "/vitrine.html",
+    "referrer": null,
+    "visitorId": "84db2bdd-bd24-4bd8-ab7a-e39ed2cca3f2",
+    "device": "desktop",
+    "timestamp": 1787417850859
+  },
+  {
+    "id": "e9b2a6d9-b426-4cce-8016-4b70e70403f6",
+    "path": "/index.html",
+    "referrer": "http://localhost:3000/vitrine.html",
+    "visitorId": "84db2bdd-bd24-4bd8-ab7a-e39ed2cca3f2",
+    "device": "desktop",
+    "timestamp": 1787417856948
+  },
+  {
+    "id": "a8420369-b36a-4598-ac7a-842c847bd53d",
+    "path": "/index.html",
+    "referrer": "http://localhost:3000/vitrine.html",
+    "visitorId": "84db2bdd-bd24-4bd8-ab7a-e39ed2cca3f2",
+    "device": "desktop",
+    "timestamp": 1787418380987
+  },
+  {
+    "id": "d186ced4-06ac-470b-8ea8-07a35738e6be",
+    "path": "/index.html",
+    "referrer": null,
+    "visitorId": "84db2bdd-bd24-4bd8-ab7a-e39ed2cca3f2",
+    "device": "desktop",
+    "timestamp": 1787440735707
+  }
+]

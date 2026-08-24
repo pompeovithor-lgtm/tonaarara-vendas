@@ -1,0 +1,54 @@
+[
+  {
+    "id": "b46f585d-69ed-446a-9bbd-81c94ce61e1b",
+    "name": "Camisa",
+    "description": "camisa zara basica",
+    "price": 99.99,
+    "createdAt": 1787366832570,
+    "images": [
+      "8142e1a8-4ed3-46dc-bb55-cca9b351a6fc.png"
+    ],
+    "status": "disponivel"
+  },
+  {
+    "id": "8f4b766b-827b-4e38-a262-363b199b2d7a",
+    "name": "camisa zara",
+    "description": "camisa zara em perfeito estado",
+    "price": 99.01,
+    "size": "P",
+    "category": "Camisa",
+    "createdAt": 1787367402718,
+    "images": [
+      "a560f2b5-5044-45c7-89ab-da0c6665f8d6.png"
+    ],
+    "status": "disponivel"
+  },
+  {
+    "id": "96cebcce-cff1-4cca-b4df-c97b01a1f7d7",
+    "name": "camisa do brasil",
+    "description": "Camisa do Brasil OG",
+    "price": 399.99,
+    "size": "M",
+    "category": "Camisa",
+    "status": "disponivel",
+    "images": [
+      "51a0dbe7-0b08-4bae-9960-c1f8f0c8ee6c.png",
+      "6c023240-7bc7-4e51-b729-0b842742b5b1.png"
+    ],
+    "createdAt": 1787411540402
+  },
+  {
+    "id": "92f5e2e9-04ec-40ca-86a3-b1395448a9c9",
+    "name": "tenis nike",
+    "description": "teis nike modelo air max 95",
+    "price": 89.9,
+    "size": "P",
+    "category": "Tênis",
+    "status": "vendido",
+    "images": [
+      "d36d581a-2dcf-4ac3-8211-07bc4719a2d9.png"
+    ],
+    "createdAt": 1787430020819,
+    "soldAt": 1787437675273
+  }
+]

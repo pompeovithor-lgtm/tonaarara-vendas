@@ -1,0 +1,26 @@
+[
+  {
+    "id": "eca79838-4261-4fdc-90e7-4f50367a7ead",
+    "type": "item_view",
+    "itemId": "b46f585d-69ed-446a-9bbd-81c94ce61e1b",
+    "query": null,
+    "visitorId": "1ab4c6ca-2296-4a86-b0b5-e83ed18d0cb3",
+    "timestamp": 1787410920543
+  },
+  {
+    "id": "a7baee00-b774-4f27-ba76-08d7e520fb28",
+    "type": "item_view",
+    "itemId": "b46f585d-69ed-446a-9bbd-81c94ce61e1b",
+    "query": null,
+    "visitorId": "1ab4c6ca-2296-4a86-b0b5-e83ed18d0cb3",
+    "timestamp": 1787410938837
+  },
+  {
+    "id": "144cf59c-54e3-47db-92f2-40b35e431e48",
+    "type": "item_view",
+    "itemId": "8f4b766b-827b-4e38-a262-363b199b2d7a",
+    "query": null,
+    "visitorId": "84db2bdd-bd24-4bd8-ab7a-e39ed2cca3f2",
+    "timestamp": 1787411309827
+  }
+]

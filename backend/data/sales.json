@@ -1,0 +1,20 @@
+[
+  {
+    "id": "6ea4c279-a6c5-4c7d-bb58-f7dc77a6e5e8",
+    "name": "vestido",
+    "price": 89.99,
+    "category": "vestido",
+    "paymentMethod": "pix",
+    "soldAt": 1781924400000,
+    "createdAt": 1787433430230
+  },
+  {
+    "id": "cda198f8-1512-446f-b1f1-7c962ffc22ed",
+    "name": "tenis nike",
+    "price": 54,
+    "category": "tenis",
+    "paymentMethod": "pix",
+    "soldAt": 1787194800000,
+    "createdAt": 1787433476329
+  }
+]

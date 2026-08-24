@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Página não encontrada — Tô Na Arara</title>
+<meta name="robots" content="noindex">
+
+<link rel="icon" type="image/png" href="assets/img/favicon.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="css/style.css">
+<style>
+  .not-found{
+    min-height: 70vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    padding: 60px 24px;
+    gap:18px;
+  }
+  .not-found img{ width:96px; height:96px; margin-bottom:6px; }
+  .not-found h1{ font-size: clamp(28px, 5vw, 40px); color: var(--crimson-dark); }
+  .not-found p{ color: var(--ink-soft); max-width: 46ch; }
+  .not-found .actions{ display:flex; gap:12px; flex-wrap:wrap; justify-content:center; margin-top:6px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="container nav">
+    <a class="brand" href="index.html#topo">
+      <img src="assets/img/logo.png" alt="Tô Na Arara — brechó e artigos vintage" width="48" height="48" />
+    </a>
+    <ul class="nav-links">
+      <li><a href="index.html#sobre">Sobre</a></li>
+      <li><a href="index.html#diferenciais">Diferenciais</a></li>
+      <li><a href="vitrine.html">Vitrine</a></li>
+      <li><a href="index.html#local">Localização</a></li>
+    </ul>
+  </div>
+</header>
+
+<main class="container not-found">
+  <img src="assets/img/logo.png" alt="" />
+  <h1>Essa peça já saiu da arara</h1>
+  <p>O link que você seguiu pode ter digitação errada, ou a peça foi vendida e removida da vitrine. Mas tem muita coisa boa esperando por você por lá.</p>
+  <div class="actions">
+    <a class="btn btn-mustard" href="vitrine.html">Ver a vitrine</a>
+    <a class="btn btn-outline" href="index.html">Voltar para o início</a>
+  </div>
+</main>
+
+</body>
+</html>

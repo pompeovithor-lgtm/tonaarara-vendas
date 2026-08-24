@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Login — Painel Tô Na Arara</title>
+<meta name="robots" content="noindex, nofollow" />
+
+<link rel="icon" type="image/png" href="../assets/img/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="admin.css">
+</head>
+<body class="admin-body admin-body--center">
+
+<main class="login-card">
+  <img class="login-logo" src="../assets/img/logo.png" alt="Tô Na Arara" width="56" height="56" />
+  <h1>Painel da loja</h1>
+  <p class="login-sub">Entre ou crie sua conta para cadastrar e gerenciar os itens da vitrine.</p>
+
+  <div class="auth-tabs" id="authTabs">
+    <button type="button" class="auth-tab is-active" data-view="login">Entrar</button>
+    <button type="button" class="auth-tab" data-view="register">Criar conta</button>
+  </div>
+
+  <!-- Entrar -->
+  <form id="loginForm" class="admin-form auth-view" data-view="login" novalidate>
+    <label>
+      Usuário ou e-mail
+      <input type="text" name="username" autocomplete="username" maxlength="254" required autofocus />
+    </label>
+    <label>
+      Senha
+      <input type="password" name="password" autocomplete="current-password" maxlength="72" required />
+    </label>
+    <p id="loginError" class="form-error" hidden></p>
+    <button type="submit" class="btn btn-mustard" style="width:100%; justify-content:center;">Entrar</button>
+    <button type="button" class="link-btn" data-view="forgot">Esqueci minha senha</button>
+  </form>
+
+  <!-- Criar conta -->
+  <form id="registerForm" class="admin-form auth-view" data-view="register" hidden novalidate>
+    <label>
+      Usuário
+      <input type="text" name="username" autocomplete="username" minlength="3" maxlength="40" required />
+    </label>
+    <label>
+      E-mail (ex.: seu Gmail)
+      <input type="email" name="email" autocomplete="email" maxlength="254" required />
+    </label>
+    <label>
+      Senha
+      <input type="password" name="password" autocomplete="new-password" minlength="6" maxlength="72" required />
+    </label>
+    <label>
+      Confirmar senha
+      <input type="password" name="confirmPassword" autocomplete="new-password" minlength="6" maxlength="72" required />
+    </label>
+    <label>
+      Código de convite <span class="label-optional">(só é pedido se já existir uma conta)</span>
+      <input type="text" name="signupCode" autocomplete="off" maxlength="100" />
+    </label>
+    <p id="registerError" class="form-error" hidden></p>
+    <button type="submit" class="btn btn-mustard" style="width:100%; justify-content:center;">Criar conta</button>
+    <p class="form-hint">Guardamos seu e-mail só para recuperar a senha se você esquecer.</p>
+  </form>
+
+  <!-- Esqueci minha senha -->
+  <form id="forgotForm" class="admin-form auth-view" data-view="forgot" hidden novalidate>
+    <label>
+      E-mail cadastrado
+      <input type="email" name="email" autocomplete="email" maxlength="254" required />
+    </label>
+    <p id="forgotError" class="form-error" hidden></p>
+    <p id="forgotSuccess" class="form-success" hidden></p>
+    <button type="submit" class="btn btn-mustard" style="width:100%; justify-content:center;">Enviar link de recuperação</button>
+    <button type="button" class="link-btn" data-view="login">Voltar para o login</button>
+  </form>
+
+  <a class="login-back" href="../index.html">&larr; Voltar ao site</a>
+</main>
+
+<script src="admin.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Painel — Tô Na Arara</title>
+<meta name="robots" content="noindex, nofollow" />
+
+<link rel="icon" type="image/png" href="../assets/img/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="admin.css">
+</head>
+<body class="admin-body">
+
+<header class="admin-header">
+  <div class="admin-header-inner">
+    <a class="brand" href="../index.html#topo">
+      <img src="../assets/img/logo.png" alt="Tô Na Arara" width="40" height="40" />
+    </a>
+    <div class="admin-header-title">
+      <strong>Painel da loja</strong>
+      <span id="whoami"></span>
+    </div>
+    <div class="admin-header-actions">
+      <a class="btn btn-outline" href="../vitrine.html" target="_blank" rel="noopener">Ver vitrine</a>
+      <button id="logoutBtn" class="btn btn-outline" type="button">Sair</button>
+    </div>
+  </div>
+  <nav class="admin-tabs" id="adminTabs">
+    <a href="dashboard.html?tab=visao-geral" class="admin-tab" data-tab="visao-geral">Visão geral</a>
+    <a href="dashboard.html?tab=itens" class="admin-tab" data-tab="itens">Itens</a>
+    <a href="dashboard.html?tab=interessados" class="admin-tab" data-tab="interessados">Interessados</a>
+    <a href="dashboard.html?tab=categorias" class="admin-tab" data-tab="categorias">Categorias</a>
+    <a href="dashboard.html?tab=financeiro" class="admin-tab" data-tab="financeiro">Financeiro</a>
+    <!-- Só admin vê essa aba — escondida via JS em admin.js depois que a
+         sessão confirma que a conta logada não é admin. -->
+    <a href="dashboard.html?tab=usuarios" class="admin-tab" data-tab="usuarios" id="tabUsuarios">Usuários</a>
+  </nav>
+</header>
+
+<main class="admin-main">
+
+  <!-- =========================================================
+       VISÃO GERAL
+       ========================================================= -->
+  <section class="admin-card" data-panel="visao-geral">
+    <h2>Visão geral</h2>
+    <p id="overviewStatus" class="form-hint">Carregando...</p>
+
+    <div class="stat-grid" id="statGrid" hidden>
+      <div class="stat-card">
+        <span class="stat-label">Hoje</span>
+        <strong id="statToday">—</strong>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Últimos 7 dias</span>
+        <strong id="stat7d">—</strong>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Últimos 30 dias</span>
+        <strong id="stat30d">—</strong>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Visitantes únicos (7d)</span>
+        <strong id="statUniqueVisitors">—</strong>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Cliques no WhatsApp (7d)</span>
+        <strong id="statWhatsappClicks">—</strong>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Taxa de conversão (7d)</span>
+        <strong id="statConversion">—</strong>
+      </div>
+    </div>
+
+    <div class="chart-block" id="chartBlock" hidden>
+      <h3>Visitas nos últimos 14 dias</h3>
+      <div id="visitsChart" class="visits-chart"></div>
+    </div>
+
+    <div class="overview-lists" id="overviewLists" hidden>
+      <div>
+        <h3>Peças mais vistas</h3>
+        <ol id="topViewedList" class="ranked-list"></ol>
+      </div>
+      <div>
+        <h3>Termos mais buscados</h3>
+        <ol id="topSearchesList" class="ranked-list"></ol>
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================================================
+       ITENS
+       ========================================================= -->
+  <section data-panel="itens" hidden>
+    <div class="admin-card">
+      <h2 id="formTitle">Cadastrar novo item</h2>
+      <form id="itemForm" class="admin-form" enctype="multipart/form-data">
+        <input type="hidden" name="id" value="" />
+        <label>
+          Nome da peça
+          <input type="text" name="name" maxlength="120" required />
+        </label>
+        <label>
+          Valor (R$)
+          <input type="number" name="price" min="0.01" max="999999" step="0.01" required />
+        </label>
+        <div class="form-row">
+          <label>
+            Tamanho
+            <select name="size" required>
+              <option value="" disabled selected>Selecione</option>
+              <option value="P">P</option>
+              <option value="M">M</option>
+              <option value="G">G</option>
+              <option value="GG">GG</option>
+            </select>
+          </label>
+          <div class="form-row-category">
+            <label>
+              Categoria
+              <select name="category" id="categorySelect" required>
+                <option value="" disabled selected>Selecione</option>
+              </select>
+            </label>
+            <button type="button" id="editCategoryBtn" class="category-edit-btn" title="Renomear categoria selecionada" aria-label="Renomear categoria selecionada" disabled>✎</button>
+            <button type="button" id="addCategoryBtn" class="category-add-btn" title="Adicionar categoria" aria-label="Adicionar nova categoria">+</button>
+          </div>
+          <label>
+            Status
+            <select name="status">
+              <option value="disponivel" selected>Disponível</option>
+              <option value="reservado">Reservado</option>
+              <option value="vendido">Vendido</option>
+            </select>
+          </label>
+        </div>
+        <div id="newCategoryRow" class="category-new-row" hidden>
+          <input type="text" id="newCategoryInput" maxlength="60" placeholder="Nome da nova categoria" />
+          <button type="button" id="confirmNewCategoryBtn" class="btn btn-outline">Adicionar</button>
+          <button type="button" id="cancelNewCategoryBtn" class="btn btn-outline">Cancelar</button>
+        </div>
+        <p id="newCategoryError" class="form-error" hidden></p>
+        <!-- Renomeia a categoria já selecionada no select acima — excluir
+             categoria continua só na aba Categorias, onde dá pra ver em
+             quantos itens ela está em uso antes de decidir. -->
+        <div id="editCategoryRow" class="category-new-row" hidden>
+          <input type="text" id="editCategoryInput" maxlength="60" placeholder="Novo nome da categoria" />
+          <button type="button" id="confirmEditCategoryBtn" class="btn btn-outline">Salvar</button>
+          <button type="button" id="cancelEditCategoryBtn" class="btn btn-outline">Cancelar</button>
+        </div>
+        <p id="editCategoryError" class="form-error" hidden></p>
+        <!-- Datalist só usada pelo campo de categoria (opcional) do form de
+             venda física, na aba Financeiro — o campo de categoria do item
+             agora é um <select>, alimentado à parte. -->
+        <datalist id="categoryOptions"></datalist>
+        <label>
+          Descrição
+          <textarea name="description" rows="3" maxlength="2000" required></textarea>
+        </label>
+        <label>
+          Fotos (até 6)
+          <input type="file" id="imagesInput" name="images" accept="image/png, image/jpeg, image/webp, image/gif" multiple />
+        </label>
+        <input type="hidden" name="existingImages" value="[]" />
+        <div id="imagePreview" class="image-preview"></div>
+        <p id="formError" class="form-error" hidden></p>
+        <div class="admin-form-actions">
+          <button type="submit" id="submitBtn" class="btn btn-mustard">Cadastrar item</button>
+          <button type="button" id="cancelEditBtn" class="btn btn-outline" hidden>Cancelar edição</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="admin-card">
+      <h2>Itens cadastrados</h2>
+      <div class="admin-filters">
+        <input type="text" id="searchInput" placeholder="Buscar por nome..." maxlength="120" />
+        <select id="categoryFilter">
+          <option value="">Todas as categorias</option>
+        </select>
+        <select id="statusFilter">
+          <option value="">Todos os status</option>
+          <option value="disponivel">Disponível</option>
+          <option value="reservado">Reservado</option>
+          <option value="vendido">Vendido</option>
+        </select>
+      </div>
+      <p id="listStatus" class="form-hint">Carregando...</p>
+      <div id="itemsList" class="admin-items"></div>
+    </div>
+  </section>
+
+  <!-- =========================================================
+       INTERESSADOS
+       ========================================================= -->
+  <section class="admin-card" data-panel="interessados" hidden>
+    <h2>Interessados</h2>
+    <p class="form-hint">Quem clicou para comprar pelo WhatsApp, mais recentes primeiro.</p>
+    <p id="leadsStatus" class="form-hint">Carregando...</p>
+    <p id="leadsMoreNotice" class="form-hint" hidden>Mostrando os 100 mais recentes — existem mais interessados além desses.</p>
+    <div id="leadsTable" class="leads-table"></div>
+  </section>
+
+  <!-- =========================================================
+       CATEGORIAS
+       ========================================================= -->
+  <section class="admin-card" data-panel="categorias" hidden>
+    <h2>Categorias</h2>
+    <p class="form-hint">Categorias novas são criadas automaticamente ao cadastrar um item com uma categoria que ainda não existe. Aqui você pode renomear ou remover as que já existem.</p>
+    <p id="categoriesError" class="form-error" hidden></p>
+    <p id="categoriesStatus" class="form-hint">Carregando...</p>
+    <div id="categoriesList" class="admin-categories"></div>
+  </section>
+
+  <!-- =========================================================
+       FINANCEIRO
+       Vendas do site (itens marcados "vendido") + vendas cadastradas à
+       mão da loja física, juntas num só resumo por período.
+       ========================================================= -->
+  <section data-panel="financeiro" hidden>
+    <div class="admin-card">
+      <h2>Financeiro</h2>
+      <div class="admin-filters">
+        <select id="financeiroPeriodo">
+          <option value="7">Últimos 7 dias</option>
+          <option value="30" selected>Últimos 30 dias</option>
+          <option value="90">Últimos 90 dias</option>
+        </select>
+      </div>
+      <p id="financeiroStatus" class="form-hint">Carregando...</p>
+      <div class="stat-grid" id="financeiroStatGrid" hidden>
+        <div class="stat-card">
+          <span class="stat-label">Vendido no site</span>
+          <strong id="statTotalSite">—</strong>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Vendido na loja física</span>
+          <strong id="statTotalLoja">—</strong>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Total geral</span>
+          <strong id="statTotalGeral">—</strong>
+        </div>
+      </div>
+    </div>
+
+    <div class="admin-card">
+      <h2>Cadastrar venda da loja física</h2>
+      <p class="form-hint">Peça vendida direto na loja, fora do site — não precisa estar cadastrada na vitrine.</p>
+      <form id="saleForm" class="admin-form">
+        <label>
+          Nome da peça
+          <input type="text" name="name" maxlength="120" required />
+        </label>
+        <div class="form-row">
+          <label>
+            Valor (R$)
+            <input type="number" name="price" min="0.01" max="999999" step="0.01" required />
+          </label>
+          <label>
+            Data da venda
+            <input type="date" name="soldAt" required />
+          </label>
+        </div>
+        <div class="form-row">
+          <label>
+            Categoria <span class="label-optional">(opcional)</span>
+            <input type="text" name="category" list="categoryOptions" maxlength="60" placeholder="ex.: Camisa" />
+          </label>
+          <label>
+            Forma de pagamento <span class="label-optional">(opcional)</span>
+            <input type="text" name="paymentMethod" maxlength="40" placeholder="ex.: Pix, Dinheiro, Cartão" />
+          </label>
+        </div>
+        <p id="saleFormError" class="form-error" hidden></p>
+        <div class="admin-form-actions">
+          <button type="submit" class="btn btn-mustard">Cadastrar venda</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="admin-card">
+      <h2>Transações</h2>
+      <p id="transacoesStatus" class="form-hint">Carregando...</p>
+      <div id="transacoesList" class="admin-transactions"></div>
+    </div>
+  </section>
+
+  <!-- =========================================================
+       USUÁRIOS (só admin)
+       ========================================================= -->
+  <section class="admin-card" data-panel="usuarios" hidden id="panelUsuarios">
+    <h2>Usuários</h2>
+    <p class="form-hint">Contas com acesso ao painel. "Admin" pode gerenciar permissões de outras contas; "Colaborador" cadastra itens e vê estatísticas normalmente, mas não mexe em quem é admin.</p>
+    <p id="usuariosError" class="form-error" hidden></p>
+    <p id="usuariosStatus" class="form-hint">Carregando...</p>
+    <div id="usuariosList" class="admin-users"></div>
+  </section>
+
+</main>
+
+<script src="admin.js" defer></script>
+</body>
+</html>

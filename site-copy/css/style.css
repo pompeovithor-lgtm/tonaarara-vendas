@@ -1,0 +1,598 @@
+/* ==========================================================================
+   TÔ NA ARARA — FOLHA DE ESTILOS
+   Organização deste arquivo (nessa ordem):
+   1. Variáveis de design (cores, sombra)
+   2. Reset e estilos base (aplicam ao site inteiro)
+   3. Componentes reutilizáveis (botões, textos "eyebrow")
+   4. Cabeçalho (logo + menu)
+   5. Seção Hero (topo com chamada principal)
+   6. Seção "Sobre nós"
+   7. Seção "Diferenciais" (cards)
+   8. Seção "Localização"
+   9. Rodapé
+   10. Animações de entrada ao rolar a página (scroll reveal)
+   11. Responsivo (celular/tablet)
+   12. Acessibilidade (usuários que preferem menos animação)
+   ========================================================================== */
+
+
+/* --------------------------------------------------------------------------
+   1. VARIÁVEIS DE DESIGN
+   Cores centralizadas aqui: para trocar a identidade visual da loja,
+   basta editar os valores abaixo — o resto do arquivo usa essas variáveis.
+   -------------------------------------------------------------------------- */
+:root{
+  --cream: #FBF1E1;        /* fundo principal, tom "papel" */
+  --cream-2: #F5E6C8;       /* variação do creme, usada em textos claros no rodapé */
+  --paper: #FFFDF8;         /* branco levemente quente, usado nos cards */
+  --crimson: #E24C3B;       /* vermelho de destaque (botões, ícones, hero) */
+  --crimson-dark: #C13A2B;  /* vermelho mais escuro, usado em texto sobre fundo claro */
+  --mustard: #F2A93B;       /* amarelo mostarda, cor de destaque secundária */
+  --mustard-dark: #D98F1F;  /* mostarda escuro, usado em sombras dos botões */
+  --teal: #2F6E8E;          /* azul petróleo, remete ao papagaio da marca */
+  --teal-dark: #1F4A60;     /* azul petróleo escuro, fundo da seção Localização */
+  --ink: #3A2A20;           /* cor do texto principal (marrom quase preto) */
+  --ink-soft: #6E5A4B;      /* cor de texto secundário/parágrafos */
+  --line: rgba(58,42,32,0.12); /* linhas divisórias sutis */
+  --shadow: 0 12px 30px rgba(58,42,32,0.14); /* sombra padrão dos cards */
+}
+
+
+/* --------------------------------------------------------------------------
+   2. RESET E ESTILOS BASE
+   Regras gerais que valem para o documento inteiro.
+   -------------------------------------------------------------------------- */
+*,*::before,*::after{ box-sizing: border-box; }
+
+html{ scroll-behavior: smooth; } /* rolagem suave ao clicar nos links do menu */
+
+body{
+  margin:0;
+  background: var(--cream);
+  color: var(--ink);
+  font-family: "Work Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+img,svg{ display:block; max-width:100%; }
+a{ color: inherit; }
+
+/* Largura máxima do conteúdo, centralizado, usada em todas as seções */
+.container{
+  width: 100%;
+  max-width: 1160px;
+  margin: 0 auto;
+  padding: 0 28px;
+}
+
+/* Títulos usam a fonte "Fredoka" (arredondada) para dar o tom lúdico da marca */
+h1,h2,h3{
+  font-family: "Fredoka", "Work Sans", sans-serif;
+  font-weight: 600;
+  line-height: 1.12;
+  text-wrap: balance;
+  margin: 0;
+}
+
+
+/* --------------------------------------------------------------------------
+   3. COMPONENTES REUTILIZÁVEIS
+   -------------------------------------------------------------------------- */
+
+/* Pequeno rótulo em caixa alta usado acima dos títulos de cada seção */
+.eyebrow{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  font-family:"Work Sans", sans-serif;
+  font-weight:700;
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* Botão base — as variações (.btn-mustard, .btn-outline, .btn-paper) mudam a cor */
+.btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  font-family:"Work Sans", sans-serif;
+  font-weight:700;
+  font-size: 15px;
+  padding: 14px 26px;
+  border-radius: 999px;
+  border: 2px solid transparent;
+  cursor:pointer;
+  text-decoration:none;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+.btn:hover{ transform: translateY(-2px); }
+.btn:active{ transform: translateY(0); }
+/* .btn define display:inline-flex, o que por si só venceria o "display:none"
+   do atributo hidden (regra do autor sempre vence a folha de estilo do
+   navegador, mesmo com especificidade igual) — sem isto, um botão .btn
+   marcado como hidden no HTML continuaria aparecendo na tela. */
+.btn[hidden]{ display:none; }
+
+.btn-mustard{
+  background: var(--mustard);
+  color: var(--ink);
+  box-shadow: 0 6px 0 var(--mustard-dark); /* efeito de botão "3D" */
+}
+.btn-mustard:hover{ box-shadow: 0 8px 0 var(--mustard-dark); }
+
+.btn-outline{
+  background: transparent;
+  border-color: currentColor;
+  color: inherit;
+}
+.btn-outline:hover{ background: rgba(255,255,255,0.12); }
+
+.btn-paper{
+  background: var(--paper);
+  color: var(--teal-dark);
+  box-shadow: 0 6px 0 rgba(0,0,0,0.15);
+}
+
+/* Selo pequeno usado para mostrar tamanho/categoria das peças da vitrine */
+.badge{
+  display:inline-flex;
+  align-items:center;
+  font-family:"Work Sans", sans-serif;
+  font-weight:700;
+  font-size: 11.5px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--cream-2);
+  color: var(--ink-soft);
+}
+.badge-size{ background: var(--teal); color: var(--cream); }
+
+
+/* --------------------------------------------------------------------------
+   4. CABEÇALHO (logo + menu de navegação)
+   -------------------------------------------------------------------------- */
+header{
+  position: sticky; /* fica fixo no topo ao rolar a página */
+  top: 0;
+  z-index: 40;
+  background: var(--cream);
+  border-bottom: 1px solid var(--line);
+  box-shadow: 0 0 0 rgba(58,42,32,0); /* base sem sombra, anima ao rolar */
+  transition: box-shadow 0.25s ease;
+}
+/* Classe adicionada pelo script.js quando a página rola — dá profundidade ao cabeçalho */
+header.scrolled{
+  box-shadow: 0 10px 24px rgba(58,42,32,0.12);
+}
+
+.nav{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding: 16px 0;
+}
+
+.brand{
+  display:flex;
+  align-items:center;
+  text-decoration:none;
+}
+/* Logo real da loja (assets/img/logo.png), usada como marca no cabeçalho */
+.brand img{ width: 48px; height: 48px; display:block; }
+
+.nav-links{
+  display:flex;
+  align-items:center;
+  gap: 30px;
+  list-style:none;
+  margin:0; padding:0;
+}
+.nav-links a{
+  text-decoration:none;
+  font-weight:600;
+  font-size: 15px;
+  color: var(--ink);
+  position:relative;
+}
+/* sublinhado animado que aparece ao passar o mouse */
+.nav-links a::after{
+  content:"";
+  position:absolute; left:0; right:0; bottom:-4px;
+  height:2px; background: var(--crimson);
+  transform: scaleX(0); transform-origin:left;
+  transition: transform 0.2s ease;
+}
+.nav-links a:hover::after{ transform: scaleX(1); }
+
+.nav-cta{ display:flex; align-items:center; gap:14px; }
+
+/* Botão discreto de acesso da loja ao painel de cadastro (canto do cabeçalho) */
+.btn-login{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1.5px solid var(--line);
+  color: var(--ink-soft);
+  text-decoration:none;
+  flex-shrink:0;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+.btn-login svg{ width:19px; height:19px; }
+.btn-login:hover{ border-color: var(--teal); color: var(--teal); }
+
+/* Botão "hamburguer", só aparece no celular (ver seção Responsivo) */
+.menu-toggle{
+  display:none;
+  background:none; border:none; cursor:pointer;
+  padding: 6px;
+}
+.menu-toggle svg{ width:28px; height:28px; }
+
+
+/* --------------------------------------------------------------------------
+   5. HERO — bloco de abertura com a chamada principal e o mascote
+   -------------------------------------------------------------------------- */
+.hero{
+  /* Gradiente + textura sutil de bolinhas no lugar do vermelho chapado,
+     dá profundidade e remete a estampa de tecido/vintage */
+  background:
+    radial-gradient(circle at 18% 22%, rgba(255,255,255,0.07) 0, rgba(255,255,255,0.07) 2px, transparent 2px),
+    linear-gradient(135deg, #EE6A4E 0%, var(--crimson) 48%, var(--crimson-dark) 100%);
+  background-size: 34px 34px, 100% 100%;
+  color: var(--cream);
+  position:relative;
+  overflow:hidden;
+  padding: 76px 0 116px;
+}
+.hero .container{
+  display:grid;
+  grid-template-columns: 1.1fr 0.9fr; /* texto à esquerda, ilustração à direita */
+  gap: 40px;
+  align-items:center;
+  position:relative;
+  z-index:2;
+}
+.hero-eyebrow{ color: var(--mustard); margin-bottom: 18px; }
+.hero h1{
+  font-size: clamp(2.4rem, 4.6vw, 3.6rem);
+  color: var(--mustard);
+}
+.hero p.lead{
+  margin-top: 20px;
+  font-size: 18px;
+  max-width: 46ch;
+  color: rgba(251,241,225,0.92);
+}
+.hero-actions{
+  display:flex; flex-wrap:wrap; gap: 16px;
+  margin-top: 32px;
+}
+.hero-badges{
+  display:flex; gap:22px; margin-top: 40px; flex-wrap:wrap;
+}
+.hero-badge{
+  display:flex; align-items:center; gap:8px;
+  font-weight:600; font-size:14px;
+  color: var(--cream);
+}
+.hero-badge svg{ width:20px; height:20px; color: var(--mustard); flex-shrink:0; }
+
+.hero-art{
+  position:relative;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+/* brilho suave atrás da logo, pra ela se destacar mais do fundo vermelho */
+.hero-art::before{
+  content:"";
+  position:absolute;
+  inset: 6%;
+  background: radial-gradient(circle, rgba(242,169,59,0.4) 0%, rgba(242,169,59,0) 68%);
+  z-index:-1;
+}
+/* Logo real da loja (assets/img/logo.png), imagem principal do hero */
+.hero-art img{
+  width: 100%;
+  max-width: 340px;
+  height:auto;
+  filter: drop-shadow(0 18px 34px rgba(0,0,0,0.28));
+}
+
+/* círculos decorativos suaves atrás do conteúdo do hero */
+.hero-blob{
+  position:absolute;
+  inset: 0;
+  z-index:0;
+}
+.hero-blob svg{ width:100%; height:100%; }
+
+/* onda suave na base do hero, faz a transição pro creme da próxima seção
+   em vez de terminar com um corte reto */
+.hero-wave{
+  position:absolute;
+  left:0; right:0; bottom:-1px;
+  z-index:1;
+  line-height:0;
+  pointer-events:none;
+}
+.hero-wave svg{ width:100%; height:72px; display:block; }
+.hero-wave path{ fill: var(--cream); }
+
+/* Animação de entrada suave dos elementos do hero ao carregar a página */
+@keyframes fadeUp{
+  from{ opacity:0; transform: translateY(18px); }
+  to{ opacity:1; transform: translateY(0); }
+}
+.hero-eyebrow, .hero h1, .hero p.lead, .hero-actions, .hero-badges, .hero-art{
+  animation: fadeUp 0.7s ease both;
+}
+.hero h1{ animation-delay: 0.05s; }
+.hero p.lead{ animation-delay: 0.12s; }
+.hero-actions{ animation-delay: 0.2s; }
+.hero-badges{ animation-delay: 0.26s; }
+.hero-art{ animation-delay: 0.15s; }
+
+
+/* --------------------------------------------------------------------------
+   6. SEÇÃO "SOBRE NÓS"
+   -------------------------------------------------------------------------- */
+.section{ padding: 92px 0; } /* espaçamento vertical padrão usado pelas seções */
+
+.sobre .container{
+  display:grid;
+  grid-template-columns: 1fr 0.85fr; /* texto à esquerda, card de destaques à direita */
+  gap: 56px;
+  align-items:center;
+}
+.sobre h2{ font-size: clamp(1.9rem, 3.2vw, 2.5rem); color: var(--crimson-dark); }
+.sobre .eyebrow{ color: var(--teal-dark); margin-bottom: 14px; }
+.sobre p{ margin-top: 18px; color: var(--ink-soft); font-size: 16.5px; max-width: 56ch; }
+
+.sobre-card{
+  background: var(--paper);
+  border-radius: 28px;
+  padding: 36px;
+  box-shadow: var(--shadow);
+  position:relative;
+}
+.sobre-card svg.doodle{ /* estrelinha decorativa no canto do card */
+  position:absolute; top:-22px; right:-18px;
+  width:64px; height:64px; color: var(--crimson);
+}
+.stat-row{ display:flex; flex-direction:column; gap: 22px; }
+.stat{ display:flex; align-items:flex-start; gap:16px; }
+.stat svg{ width:32px; height:32px; color: var(--teal); flex-shrink:0; margin-top:2px; }
+.stat strong{ display:block; font-family:"Fredoka",sans-serif; font-size:17px; }
+.stat span{ color: var(--ink-soft); font-size: 14.5px; }
+
+
+/* --------------------------------------------------------------------------
+   7. SEÇÃO "DIFERENCIAIS" — grade de cartões
+   -------------------------------------------------------------------------- */
+.diferenciais{ background: var(--mustard); }
+.diferenciais .eyebrow{ color: var(--crimson-dark); }
+.diferenciais h2{ color: var(--ink); margin-top:14px; font-size: clamp(1.9rem, 3.2vw, 2.5rem); max-width: 20ch; }
+.diferenciais .head{ max-width: 620px; margin-bottom: 52px; }
+
+.cards-grid{
+  display:grid;
+  grid-template-columns: repeat(4, 1fr); /* 4 cartões lado a lado no desktop */
+  gap: 24px;
+}
+.card{
+  background: var(--paper);
+  border-radius: 22px;
+  padding: 28px 24px;
+  box-shadow: var(--shadow);
+  transition: transform 0.18s ease;
+}
+.card:hover{ transform: translateY(-6px); }
+.card svg{ width:34px; height:34px; color: var(--crimson); }
+.card h3{ font-size: 18px; margin-top: 18px; color: var(--ink); }
+.card p{ margin: 10px 0 0; font-size: 14.5px; color: var(--ink-soft); }
+
+
+/* --------------------------------------------------------------------------
+   8. SEÇÃO "LOCALIZAÇÃO"
+   -------------------------------------------------------------------------- */
+.local{
+  background: var(--teal-dark);
+  color: var(--cream);
+  position:relative;
+  overflow:hidden;
+}
+.local .container{
+  display:grid;
+  grid-template-columns: 1fr 1fr; /* informações à esquerda, card de endereço à direita */
+  gap: 50px;
+  align-items:center;
+  position:relative;
+  z-index:2;
+}
+.local .eyebrow{ color: var(--mustard); }
+.local h2{ color: var(--cream); margin-top:14px; font-size: clamp(1.9rem, 3.2vw, 2.5rem); }
+.local p.lead{ margin-top:16px; color: rgba(251,241,225,0.85); max-width: 48ch; }
+
+.info-list{ margin-top: 30px; display:flex; flex-direction:column; gap: 20px; }
+.info-item{ display:flex; gap:14px; align-items:flex-start; }
+.info-item svg{ width:26px; height:26px; color: var(--mustard); flex-shrink:0; margin-top:2px; }
+.info-item strong{ display:block; font-family:"Fredoka",sans-serif; font-size:16px; }
+.info-item span{ color: rgba(251,241,225,0.85); font-size:14.5px; }
+
+.local-actions{ display:flex; gap:16px; margin-top: 32px; flex-wrap:wrap; }
+
+/* Cartão branco com o endereço em destaque */
+.map-card{
+  background: var(--paper);
+  color: var(--ink);
+  border-radius: 28px;
+  padding: 36px;
+  box-shadow: var(--shadow);
+}
+.map-card .pin-wrap{
+  width:56px; height:56px;
+  border-radius:50%;
+  background: var(--crimson);
+  display:flex; align-items:center; justify-content:center;
+  margin-bottom: 18px;
+}
+.map-card .pin-wrap svg{ width:28px; height:28px; color: var(--cream); }
+.map-card address{ font-style:normal; font-size: 17px; line-height:1.55; }
+.map-card .cep{ display:block; margin-top:6px; color: var(--ink-soft); font-size:14px; }
+
+
+/* --------------------------------------------------------------------------
+   9. RODAPÉ
+   -------------------------------------------------------------------------- */
+footer{
+  background: var(--ink);
+  color: var(--cream-2);
+  padding: 64px 0 28px;
+}
+.footer-grid{
+  display:grid;
+  grid-template-columns: 1.3fr 1fr 1fr; /* marca | navegação | contato */
+  gap: 40px;
+  padding-bottom: 44px;
+  border-bottom: 1px solid rgba(251,241,225,0.14);
+}
+.footer-brand{ display:flex; align-items:center; gap:10px; font-family:"Fredoka",sans-serif; font-weight:700; font-size:20px; color: var(--mustard); }
+/* Logo real da loja (assets/img/logo.png), versão pequena para o rodapé */
+.footer-brand img{ width:40px; height:40px; }
+.footer-grid p{ color: rgba(251,241,225,0.65); font-size:14.5px; margin-top:14px; max-width: 34ch; }
+.footer-col h4{ font-family:"Fredoka",sans-serif; font-size:15px; margin:0 0 16px; color: var(--cream); }
+.footer-col ul{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:10px; }
+.footer-col a{ text-decoration:none; color: rgba(251,241,225,0.75); font-size:14.5px; }
+.footer-col a:hover{ color: var(--mustard); }
+.footer-bottom{
+  display:flex; justify-content:space-between; align-items:center;
+  padding-top: 24px; font-size: 13px; color: rgba(251,241,225,0.5);
+  flex-wrap:wrap; gap: 10px;
+}
+
+
+/* --------------------------------------------------------------------------
+   10. ANIMAÇÕES DE ENTRADA AO ROLAR (SCROLL REVEAL)
+   Os elementos com a classe .reveal começam invisíveis e deslizam pra cima
+   suavemente quando entram na tela. A classe "is-visible" é adicionada pelo
+   script.js (usando IntersectionObserver) no momento em que isso acontece.
+
+   A classe "js" no <html> só existe quando o JavaScript rodou (ver o script
+   inline no <head> do index.html) — assim, se o JS falhar ou estiver
+   desligado, o conteúdo simplesmente aparece normal, sem ficar escondido.
+   -------------------------------------------------------------------------- */
+.js .reveal{
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+.js .reveal.is-visible{
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Nos grids de cartões, cada item revela um pouquinho depois do anterior */
+.cards-grid .reveal:nth-child(1){ transition-delay: 0s; }
+.cards-grid .reveal:nth-child(2){ transition-delay: 0.08s; }
+.cards-grid .reveal:nth-child(3){ transition-delay: 0.16s; }
+.cards-grid .reveal:nth-child(4){ transition-delay: 0.24s; }
+
+/* ".js .reveal.is-visible" (3 classes) é mais específico que ".card:hover"
+   (1 classe + pseudo-classe) da seção 7, então sem essa regra o hover do
+   cartão pararia de funcionar depois que ele fosse revelado. Esta regra usa
+   4 classes de propósito para sempre vencer e manter o efeito de hover. */
+.card.reveal.is-visible:hover{
+  transform: translateY(-6px);
+}
+
+/* Flutuação bem sutil da logo no hero, pra dar vida ao mascote sem exagerar */
+@keyframes float{
+  from{ transform: translateY(0); }
+  to{ transform: translateY(-10px); }
+}
+.hero-art img{
+  animation: float 4s ease-in-out infinite alternate;
+}
+
+
+/* --------------------------------------------------------------------------
+   11. RESPONSIVO
+   Ajustes para telas menores que 860px (tablet) e 520px (celular).
+   -------------------------------------------------------------------------- */
+@media (max-width: 860px){
+  .menu-toggle{ display:flex; } /* botão hamburguer só aparece no celular/tablet */
+  .nav-cta .btn-outline{ display:none; }
+
+  /* O menu fica sempre no DOM (não usamos display:none) para poder animar
+     a abertura/fechamento com max-height + opacity em vez de aparecer/sumir
+     de repente. Estado fechado: */
+  .nav-links{
+    position:absolute; top:100%; left:0; right:0;
+    flex-direction:column; align-items:flex-start;
+    gap: 18px;
+    background: var(--cream);
+    padding: 0 28px;
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    border-bottom: 1px solid var(--line);
+    transition: max-height 0.35s ease, opacity 0.25s ease, padding 0.35s ease;
+  }
+  /* Quando o JS adiciona a classe "nav-open" no body, o menu desliza e some suavemente */
+  body.nav-open .nav-links{
+    max-height: 320px;
+    opacity: 1;
+    padding: 24px 28px 30px;
+  }
+
+  /* As seções de duas colunas passam a empilhar em uma coluna só */
+  .hero .container, .sobre .container, .local .container{
+    grid-template-columns: 1fr;
+  }
+  .hero-art{ order:-1; max-width: 260px; margin: 0 auto; }
+  .cards-grid{ grid-template-columns: repeat(2, 1fr); }
+  .footer-grid{ grid-template-columns: 1fr; }
+}
+
+@media (max-width: 520px){
+  .cards-grid{ grid-template-columns: 1fr; }
+  .section{ padding: 64px 0; }
+  .hero{ padding: 56px 0 88px; }
+  .hero-wave svg{ height: 40px; }
+  /* Em telas bem estreitas (ex.: iPhone SE), logo + "Como chegar" + login +
+     hamburguer não cabem todos lado a lado — some com o "Como chegar" e
+     deixa só o essencial (o menu aberto já leva pra seção de localização). */
+  .nav-cta .btn-mustard{ display:none; }
+  /* Um pouco menos de respiro nas laterais aqui embaixo, só nesse tamanho
+     de tela, pra dar folga extra pro cabeçalho e pra outras barras que
+     ficam justas exatamente na borda (ex.: filtros da vitrine). */
+  .container{ padding: 0 18px; }
+}
+
+
+/* --------------------------------------------------------------------------
+   12. ACESSIBILIDADE
+   Desliga animações para quem ativou "reduzir movimento" no sistema:
+   nada de fade-up, flutuação da logo ou revelação ao rolar — o conteúdo
+   já aparece no lugar final, direto.
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce){
+  html{ scroll-behavior:auto; }
+  .hero-eyebrow, .hero h1, .hero p.lead, .hero-actions, .hero-badges, .hero-art, .hero-art img, .card, .reveal, header{
+    animation: none !important; transition:none !important;
+  }
+  .js .reveal{
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}

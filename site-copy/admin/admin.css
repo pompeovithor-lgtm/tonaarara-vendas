@@ -1,0 +1,603 @@
+/* ==========================================================================
+   PAINEL ADMIN — login e cadastro de itens
+   Reaproveita as variáveis de cor/fonte de css/style.css.
+   ========================================================================== */
+
+.admin-body{
+  margin:0;
+  min-height:100vh;
+  background: var(--cream);
+  font-family:"Work Sans", sans-serif;
+  color: var(--ink);
+}
+.admin-body--center{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding: 24px;
+}
+
+/* ---------- Login ---------- */
+.login-card{
+  background: var(--paper);
+  border-radius: 24px;
+  box-shadow: var(--shadow);
+  padding: 40px 36px;
+  max-width: 380px;
+  width:100%;
+  text-align:center;
+}
+.login-logo{ margin: 0 auto 12px; }
+.login-card h1{ font-size: 22px; }
+.login-sub{ color: var(--ink-soft); font-size: 14.5px; margin: 8px 0 24px; }
+.login-back{
+  display:inline-block;
+  margin-top: 20px;
+  font-size: 14px;
+  color: var(--ink-soft);
+  text-decoration:none;
+}
+.login-back:hover{ color: var(--crimson-dark); }
+
+/* Abas Entrar / Criar conta */
+.auth-tabs{
+  display:flex;
+  background: var(--cream);
+  border-radius: 999px;
+  padding: 4px;
+  margin-bottom: 22px;
+}
+.auth-tab{
+  flex:1;
+  border:none;
+  background:transparent;
+  padding: 10px 0;
+  border-radius: 999px;
+  font-family: inherit;
+  font-weight:700;
+  font-size: 14px;
+  color: var(--ink-soft);
+  cursor:pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.auth-tab.is-active{
+  background: var(--paper);
+  color: var(--crimson-dark);
+  box-shadow: 0 2px 6px rgba(58,42,32,0.12);
+}
+
+.link-btn{
+  border:none;
+  background:none;
+  color: var(--teal);
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight:600;
+  cursor:pointer;
+  padding: 2px 0;
+  text-align:center;
+}
+.link-btn:hover{ color: var(--teal-dark); text-decoration:underline; }
+
+.form-success{
+  background: rgba(47,110,142,0.1);
+  color: var(--teal-dark);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 14px;
+  margin:0;
+}
+.label-optional{ font-weight:400; text-transform:none; letter-spacing:normal; color: var(--ink-soft); }
+
+/* ---------- Formulários ---------- */
+.admin-form{ display:flex; flex-direction:column; gap:16px; text-align:left; }
+.admin-form[hidden]{ display:none; }
+.admin-form label{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  font-size: 13.5px;
+  font-weight:600;
+  color: var(--ink-soft);
+}
+.form-row{ display:flex; gap:16px; }
+.form-row label{ flex:1; }
+
+/* Campo de categoria do item: select + botão "+" pra criar categoria nova
+   sem sair do formulário. align-items:flex-end alinha o botão com a base
+   do select, não com o topo do rótulo "Categoria". */
+.form-row-category{ display:flex; gap:8px; align-items:flex-end; flex:1; }
+.form-row-category label{ flex:1; }
+.category-add-btn{
+  flex-shrink:0;
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  border:none;
+  background: var(--mustard);
+  color: var(--ink);
+  font-size: 22px;
+  font-weight:700;
+  line-height:1;
+  cursor:pointer;
+  box-shadow: 0 4px 0 var(--mustard-dark);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.category-add-btn:hover{ transform: translateY(-2px); box-shadow: 0 6px 0 var(--mustard-dark); }
+.category-add-btn:active{ transform: translateY(0); }
+
+/* Botão de renomear (lápis): estilo secundário — a ação de destaque
+   continua sendo "+" (criar). Some/desabilita quando nenhuma categoria
+   está selecionada, já que não tem o que renomear. */
+.category-edit-btn{
+  flex-shrink:0;
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  border: 1.5px solid var(--line);
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 17px;
+  cursor:pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+.category-edit-btn:hover{ border-color: var(--teal); color: var(--teal-dark); }
+.category-edit-btn:disabled{ opacity: 0.4; cursor: not-allowed; }
+.category-edit-btn:disabled:hover{ border-color: var(--line); color: var(--ink); }
+
+.category-new-row{ display:flex; gap:8px; }
+.category-new-row[hidden]{ display:none; }
+.category-new-row input{
+  flex:1;
+  font-family: inherit;
+  font-size: 15px;
+  padding: 11px 14px;
+  border-radius: 12px;
+  border: 1.5px solid var(--teal);
+  background: var(--cream);
+  color: var(--ink);
+}
+.category-new-row .btn{ padding: 10px 18px; font-size: 14px; }
+
+@media (max-width: 560px){
+  .form-row-category{ flex-wrap:wrap; }
+  .form-row-category label{ min-width: 100%; }
+}
+
+.admin-form input[type="text"],
+.admin-form input[type="password"],
+.admin-form input[type="number"],
+.admin-form input[type="email"],
+.admin-form input[type="file"],
+.admin-form select,
+.admin-form textarea{
+  font-family: inherit;
+  font-size: 15px;
+  padding: 11px 14px;
+  border-radius: 12px;
+  border: 1.5px solid var(--line);
+  background: var(--cream);
+  color: var(--ink);
+  resize: vertical;
+}
+.admin-form input:focus, .admin-form select:focus, .admin-form textarea:focus{
+  outline: none;
+  border-color: var(--teal);
+}
+.form-error{
+  background: rgba(226,76,59,0.1);
+  color: var(--crimson-dark);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 14px;
+  margin:0;
+}
+.form-hint{ color: var(--ink-soft); font-size: 13.5px; margin:0; }
+.admin-form-actions{ display:flex; gap: 12px; }
+
+/* ---------- Galeria de fotos do formulário ---------- */
+.image-preview{
+  display:flex;
+  flex-wrap:wrap;
+  gap: 12px;
+}
+.image-thumb{
+  position:relative;
+  width: 96px;
+  border-radius: 12px;
+  overflow:hidden;
+  background: var(--cream-2);
+  border: 1.5px solid var(--line);
+}
+.image-thumb img{ width:100%; height:96px; object-fit:cover; display:block; }
+.image-thumb.is-new{ border-style:dashed; border-color: var(--teal); }
+.image-thumb-badge{
+  position:absolute;
+  top:6px; left:6px;
+  background: rgba(58,42,32,0.75);
+  color: var(--cream);
+  font-size: 10.5px;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:0.04em;
+  padding: 2px 7px;
+  border-radius: 999px;
+}
+.image-thumb-actions{
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+  padding: 6px;
+}
+.image-thumb-actions button{
+  border: 1px solid var(--line);
+  background: var(--paper);
+  border-radius: 8px;
+  padding: 4px 6px;
+  font-size: 11px;
+  font-weight:600;
+  cursor:pointer;
+  color: var(--ink);
+}
+.image-thumb-actions button.danger{ color: var(--crimson-dark); border-color: var(--crimson); }
+
+/* ---------- Selos de status ---------- */
+.badge-status-disponivel{ background: rgba(47,110,142,0.16); color: var(--teal-dark); }
+.badge-status-reservado{ background: rgba(242,169,59,0.22); color: var(--mustard-dark); }
+.badge-status-vendido{ background: rgba(226,76,59,0.16); color: var(--crimson-dark); }
+
+/* ---------- Ações rápidas de status na listagem ---------- */
+.admin-item-status-actions{ display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+.admin-item-status-actions button{
+  border: 1.5px solid var(--line);
+  background: var(--cream);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 12.5px;
+  font-weight:600;
+  cursor:pointer;
+  color: var(--ink);
+}
+.admin-item-status-actions button:hover{ border-color: var(--teal); color: var(--teal-dark); }
+
+/* ---------- Busca e filtros da listagem ---------- */
+.admin-filters{
+  display:flex;
+  flex-wrap:wrap;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+.admin-filters input,
+.admin-filters select{
+  font-family: inherit;
+  font-size: 14px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  border: 1.5px solid var(--line);
+  background: var(--cream);
+  color: var(--ink);
+}
+.admin-filters input{ flex:1; min-width:160px; }
+
+/* ---------- Cabeçalho do painel ---------- */
+.admin-header{
+  background: var(--paper);
+  border-bottom: 1px solid var(--line);
+  position: sticky; top:0; z-index:10;
+}
+.admin-header-inner{
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 14px 24px;
+  display:flex;
+  align-items:center;
+  gap: 16px;
+}
+.admin-header-title{ display:flex; flex-direction:column; flex:1; line-height:1.3; }
+.admin-header-title strong{ font-family:"Fredoka",sans-serif; }
+.admin-header-title span{ font-size: 12.5px; color: var(--ink-soft); }
+.admin-header-actions{ display:flex; gap:10px; }
+.admin-header .btn{ padding: 10px 18px; font-size: 13.5px; }
+
+/* ---------- Abas do painel (Visão geral / Itens / Interessados / Categorias) ---------- */
+.admin-tabs{
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 24px;
+  display:flex;
+  gap: 6px;
+  overflow-x:auto;
+}
+.admin-tab{
+  padding: 12px 16px 10px;
+  font-weight:700;
+  font-size: 14px;
+  color: var(--ink-soft);
+  text-decoration:none;
+  border-bottom: 3px solid transparent;
+  white-space:nowrap;
+}
+.admin-tab:hover{ color: var(--ink); }
+.admin-tab.is-active{ color: var(--crimson-dark); border-bottom-color: var(--crimson); }
+
+/* ---------- Corpo do painel ---------- */
+.admin-main{
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 32px 24px 80px;
+  display:flex;
+  flex-direction:column;
+  gap: 28px;
+}
+.admin-card{
+  background: var(--paper);
+  border-radius: 22px;
+  box-shadow: var(--shadow);
+  padding: 28px 30px;
+}
+.admin-card h2{ font-size: 19px; margin-bottom: 18px; }
+/* A aba "Itens" tem dois .admin-card um em seguida do outro dentro da mesma
+   section (form de cadastro + lista) — o gap de .admin-main só espaça as
+   sections entre si, não esses dois cartões internos, então sem isto eles
+   ficam colados (a sombra de um "vaza" sobre o outro). */
+.admin-card + .admin-card{ margin-top: 28px; }
+
+.admin-items{ display:flex; flex-direction:column; gap: 14px; margin-top: 6px; }
+.admin-item{
+  display:flex;
+  gap:16px;
+  align-items:flex-start;
+  padding: 14px;
+  border: 1.5px solid var(--line);
+  border-radius: 16px;
+}
+.admin-item-thumb{
+  width: 64px; height: 64px;
+  border-radius: 12px;
+  background: var(--cream-2);
+  flex-shrink:0;
+  overflow:hidden;
+  display:flex; align-items:center; justify-content:center;
+}
+.admin-item-thumb img{ width:100%; height:100%; object-fit:cover; }
+.admin-item-body{ flex:1; min-width:0; }
+.admin-item-body h3{ margin:0; font-size:16px; }
+.admin-item-price{ font-family:"Fredoka",sans-serif; color: var(--crimson-dark); font-size:14.5px; }
+.admin-item-badges{ display:flex; gap:6px; margin-top:4px; }
+.admin-item-body p{ margin: 4px 0 0; font-size: 13.5px; color: var(--ink-soft); }
+.admin-item-actions{ display:flex; gap:8px; flex-shrink:0; }
+.admin-item-actions button{
+  border: 1.5px solid var(--line);
+  background: var(--paper);
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight:600;
+  cursor:pointer;
+  color: var(--ink);
+}
+.admin-item-actions button:hover{ border-color: var(--teal); }
+.admin-item-actions button.danger:hover{ border-color: var(--crimson); color: var(--crimson-dark); }
+
+@media (max-width: 560px){
+  .admin-item{ flex-wrap:wrap; }
+  .admin-item-actions{ width:100%; justify-content:flex-end; }
+}
+
+/* ---------- Categorias ---------- */
+.admin-categories{ display:flex; flex-direction:column; gap: 10px; margin-top: 6px; }
+.admin-category-row{
+  display:flex;
+  align-items:center;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1.5px solid var(--line);
+  border-radius: 14px;
+}
+.admin-category-name{ flex:1; font-weight:600; }
+.admin-category-row input[type="text"]{
+  flex:1;
+  font-family: inherit;
+  font-size: 14px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1.5px solid var(--line);
+  background: var(--cream);
+  color: var(--ink);
+}
+.admin-category-row button{
+  border: 1.5px solid var(--line);
+  background: var(--paper);
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight:600;
+  cursor:pointer;
+  color: var(--ink);
+  flex-shrink:0;
+}
+.admin-category-row button:hover{ border-color: var(--teal); }
+.admin-category-row button.danger:hover{ border-color: var(--crimson); color: var(--crimson-dark); }
+
+@media (max-width: 560px){
+  .admin-category-row{ flex-wrap:wrap; }
+}
+
+/* ---------- Usuários (permissões) ---------- */
+.admin-users{ display:flex; flex-direction:column; gap: 10px; margin-top: 6px; }
+.admin-user-row{
+  display:flex;
+  align-items:center;
+  gap: 14px;
+  padding: 12px 14px;
+  border: 1.5px solid var(--line);
+  border-radius: 14px;
+}
+.admin-user-info{ flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; }
+.admin-user-info strong{ font-size: 14.5px; }
+.admin-user-info span{ font-size: 13px; color: var(--ink-soft); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.badge-admin{ background: rgba(226,76,59,0.16); color: var(--crimson-dark); }
+.badge-colaborador{ background: rgba(47,110,142,0.16); color: var(--teal-dark); }
+.admin-user-row button{
+  border: 1.5px solid var(--line);
+  background: var(--paper);
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight:600;
+  cursor:pointer;
+  color: var(--ink);
+  flex-shrink:0;
+}
+.admin-user-row button:hover{ border-color: var(--teal); }
+.admin-user-row button.danger:hover{ border-color: var(--crimson); color: var(--crimson-dark); }
+
+@media (max-width: 560px){
+  .admin-user-row{ flex-wrap:wrap; }
+}
+
+/* ---------- Financeiro ---------- */
+.admin-transactions{ display:flex; flex-direction:column; gap: 10px; margin-top: 6px; }
+.admin-transaction-row{
+  display:flex;
+  align-items:center;
+  gap: 14px;
+  padding: 12px 14px;
+  border: 1.5px solid var(--line);
+  border-radius: 14px;
+  flex-wrap:wrap;
+}
+.admin-transaction-info{ flex:1; min-width:160px; display:flex; flex-direction:column; gap:2px; }
+.admin-transaction-info strong{ font-size: 14.5px; }
+.admin-transaction-info span{ font-size: 13px; color: var(--ink-soft); }
+.admin-transaction-price{ font-family:"Fredoka",sans-serif; font-weight:600; color: var(--crimson-dark); font-size: 14.5px; flex-shrink:0; }
+.badge-origem-site{ background: rgba(47,110,142,0.16); color: var(--teal-dark); }
+.badge-origem-loja{ background: rgba(242,169,59,0.22); color: var(--mustard-dark); }
+.admin-transaction-row button{
+  border: 1.5px solid var(--line);
+  background: var(--paper);
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight:600;
+  cursor:pointer;
+  color: var(--ink);
+  flex-shrink:0;
+}
+.admin-transaction-row button:hover{ border-color: var(--crimson); color: var(--crimson-dark); }
+
+/* ---------- Visão geral: cartões de número ---------- */
+.stat-grid{
+  display:grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-top: 6px;
+}
+/* display:grid venceria o "display:none" do atributo hidden sem isto (regra
+   do autor sempre vence a folha de estilo do navegador) — os cartões com
+   "—" apareceriam antes dos números carregarem. */
+.stat-grid[hidden]{ display:none; }
+.stat-card{
+  background: var(--cream);
+  border-radius: 16px;
+  padding: 18px 20px;
+  display:flex;
+  flex-direction:column;
+  gap: 6px;
+}
+.stat-label{ font-size: 12.5px; font-weight:700; color: var(--ink-soft); text-transform:uppercase; letter-spacing:0.04em; }
+.stat-card strong{ font-family:"Fredoka",sans-serif; font-size: 26px; color: var(--crimson-dark); }
+
+@media (max-width: 640px){
+  .stat-grid{ grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ---------- Visão geral: gráfico de visitas ---------- */
+.chart-block{ margin-top: 32px; }
+.chart-block h3{ font-size: 15px; margin: 0 0 12px; }
+.visits-chart{ position:relative; }
+.visits-chart-svg{ width:100%; height:160px; display:block; }
+.visits-bar{ fill: var(--crimson); opacity:0.85; }
+.visits-bar:hover{ opacity:1; }
+.visits-chart-labels{
+  position:relative;
+  height: 18px;
+  margin-top: 4px;
+}
+.visits-chart-labels span{
+  position:absolute;
+  transform: translateX(-50%);
+  font-size: 11px;
+  color: var(--ink-soft);
+  white-space:nowrap;
+}
+
+/* ---------- Visão geral: peças mais vistas / termos mais buscados ---------- */
+.overview-lists{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 28px;
+  margin-top: 32px;
+}
+.overview-lists[hidden]{ display:none; }
+.overview-lists h3{ font-size: 15px; margin: 0 0 12px; }
+.ranked-list{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px; }
+.ranked-list-empty{ color: var(--ink-soft); font-size: 13.5px; }
+.ranked-item{
+  display:flex;
+  align-items:center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--cream);
+}
+.ranked-item-thumb{
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  background: var(--cream-2);
+  flex-shrink:0;
+  overflow:hidden;
+}
+.ranked-item-thumb img{ width:100%; height:100%; object-fit:cover; }
+.ranked-item-label{ flex:1; min-width:0; font-size: 14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.ranked-item-count{ font-family:"Fredoka",sans-serif; font-weight:600; font-size: 13.5px; color: var(--crimson-dark); flex-shrink:0; }
+
+@media (max-width: 640px){
+  .overview-lists{ grid-template-columns: 1fr; }
+}
+
+/* ---------- Interessados ---------- */
+.leads-table{ display:flex; flex-direction:column; gap: 12px; margin-top: 6px; }
+.leads-row{
+  display:flex;
+  align-items:center;
+  gap: 14px;
+  padding: 12px 14px;
+  border: 1.5px solid var(--line);
+  border-radius: 14px;
+  flex-wrap:wrap;
+}
+.leads-row-thumb{
+  width: 48px; height: 48px;
+  border-radius: 10px;
+  background: var(--cream-2);
+  flex-shrink:0;
+  overflow:hidden;
+}
+.leads-row-thumb img{ width:100%; height:100%; object-fit:cover; }
+.leads-row-body{ flex:1; min-width:160px; }
+.leads-row-top{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.leads-row-top a{ font-weight:700; color: var(--ink); text-decoration:none; }
+.leads-row-top a:hover{ color: var(--crimson-dark); text-decoration:underline; }
+.leads-row-meta{ font-size: 13px; color: var(--ink-soft); margin-top: 3px; }
+.leads-row-actions button{
+  border: 1.5px solid var(--line);
+  background: var(--cream);
+  border-radius: 999px;
+  padding: 7px 14px;
+  font-size: 12.5px;
+  font-weight:600;
+  cursor:pointer;
+  color: var(--ink);
+}
+.leads-row-actions button:hover{ border-color: var(--teal); color: var(--teal-dark); }

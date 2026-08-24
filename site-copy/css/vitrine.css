@@ -1,0 +1,363 @@
+/* ==========================================================================
+   VITRINE — cabeçalho da página + grade de produtos
+   Reaproveita as variáveis e componentes de css/style.css.
+   ========================================================================== */
+
+.vitrine-hero{
+  background:
+    radial-gradient(circle at 18% 22%, rgba(255,255,255,0.07) 0, rgba(255,255,255,0.07) 2px, transparent 2px),
+    linear-gradient(135deg, #EE6A4E 0%, var(--crimson) 48%, var(--crimson-dark) 100%);
+  background-size: 34px 34px, 100% 100%;
+  color: var(--cream);
+  padding: 64px 0 56px;
+}
+.vitrine-hero .eyebrow{ color: var(--mustard); margin-bottom: 14px; }
+.vitrine-hero h1{ font-size: clamp(2rem, 3.8vw, 2.9rem); color: var(--mustard); }
+.vitrine-hero p.lead{ margin-top: 14px; font-size: 17px; max-width: 52ch; color: rgba(251,241,225,0.92); }
+
+.vitrine-grid-section{ padding-top: 56px; }
+
+.vitrine-status{
+  text-align:center;
+  padding: 40px 20px;
+  color: var(--ink-soft);
+  font-size: 16px;
+}
+.vitrine-status.error{ color: var(--crimson-dark); font-weight:600; }
+
+.vitrine-grid{
+  display:grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 28px;
+}
+
+.vitrine-card{
+  background: var(--paper);
+  border-radius: 22px;
+  overflow:hidden;
+  box-shadow: var(--shadow);
+  display:flex;
+  flex-direction:column;
+}
+.vitrine-card-img{
+  width:100%;
+  aspect-ratio: 4 / 5;
+  background: var(--cream-2);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  overflow:hidden;
+}
+.vitrine-card-img img{ width:100%; height:100%; object-fit: cover; }
+.vitrine-card-img svg{ width:44px; height:44px; color: var(--ink-soft); opacity:0.5; }
+
+.vitrine-card-body{ padding: 20px 22px 24px; display:flex; flex-direction:column; gap:8px; flex:1; }
+.vitrine-card-badges{ display:flex; gap:6px; flex-wrap:wrap; }
+.vitrine-card-body h3{ font-size: 18px; color: var(--ink); }
+.vitrine-card-price{
+  font-family:"Fredoka",sans-serif;
+  font-weight:600;
+  font-size: 17px;
+  color: var(--crimson-dark);
+}
+.vitrine-card-body p{ margin:0; font-size:14.5px; color: var(--ink-soft); flex:1; }
+.vitrine-card-buy{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  margin-top: 6px;
+  padding: 11px 18px;
+  border-radius: 999px;
+  background: var(--mustard);
+  color: var(--ink);
+  font-family:"Work Sans", sans-serif;
+  font-weight:700;
+  font-size: 14px;
+  text-decoration:none;
+  box-shadow: 0 5px 0 var(--mustard-dark);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.vitrine-card-buy:hover{ transform: translateY(-2px); box-shadow: 0 7px 0 var(--mustard-dark); }
+.vitrine-card-buy svg{ width:16px; height:16px; }
+
+@media (max-width: 860px){
+  .vitrine-grid{ grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 560px){
+  .vitrine-grid{ grid-template-columns: 1fr; }
+}
+
+/* ---------- Favoritar (coração no card) ---------- */
+.vitrine-card-fav{
+  position:absolute;
+  top:12px; right:12px;
+  width:36px; height:36px;
+  border-radius:50%;
+  border:none;
+  background: rgba(255,253,248,0.9);
+  display:flex; align-items:center; justify-content:center;
+  cursor:pointer;
+  box-shadow: 0 3px 8px rgba(58,42,32,0.18);
+}
+.vitrine-card-fav svg{ width:18px; height:18px; color: var(--ink-soft); transition: color 0.15s ease, transform 0.15s ease; }
+.vitrine-card-fav:hover svg{ transform: scale(1.1); }
+.vitrine-card-fav.is-favorito svg{ color: var(--crimson); fill: var(--crimson); }
+.vitrine-card-img{ position:relative; }
+
+/* ---------- Selo "Reservado" ---------- */
+.badge-reservado{ background: rgba(242,169,59,0.22); color: var(--mustard-dark); }
+
+/* ---------- Card clicável (abre o modal) ---------- */
+.vitrine-card-open{
+  display:flex;
+  flex-direction:column;
+  flex:1;
+  cursor:pointer;
+}
+.vitrine-card-open:focus-visible{ outline: 2px solid var(--teal); outline-offset: -2px; }
+
+/* ==========================================================================
+   FILTROS
+   ========================================================================== */
+.vitrine-filters{ margin-bottom: 28px; }
+.vitrine-filters-row{ display:flex; gap:12px; align-items:center; }
+
+.vitrine-search{
+  flex:1;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  background: var(--paper);
+  border: 1.5px solid var(--line);
+  border-radius: 999px;
+  padding: 12px 18px;
+}
+.vitrine-search svg{ width:18px; height:18px; color: var(--ink-soft); flex-shrink:0; }
+.vitrine-search input{
+  border:none; background:none; outline:none;
+  font-family:"Work Sans", sans-serif;
+  font-size: 15px;
+  color: var(--ink);
+  width:100%;
+}
+.vitrine-search input::-webkit-search-cancel-button{ cursor:pointer; }
+
+.vitrine-filters-toggle{ display:none; flex-shrink:0; padding: 12px 20px; }
+
+.vitrine-filters-panel{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:flex-end;
+  gap: 14px;
+  margin-top: 16px;
+  padding: 18px;
+  background: var(--paper);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+}
+.vitrine-filters-panel label{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  font-size: 12.5px;
+  font-weight:700;
+  color: var(--ink-soft);
+  text-transform:uppercase;
+  letter-spacing:0.03em;
+}
+.vitrine-filters-panel select,
+.vitrine-filters-panel input[type="number"]{
+  font-family:"Work Sans", sans-serif;
+  font-size: 14.5px;
+  font-weight:400;
+  text-transform:none;
+  letter-spacing:normal;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1.5px solid var(--line);
+  background: var(--cream);
+  color: var(--ink);
+  min-width: 120px;
+}
+.vitrine-filters-fav{
+  flex-direction:row !important;
+  align-items:center;
+  gap:8px !important;
+  cursor:pointer;
+}
+.vitrine-filters-fav input{ width:16px; height:16px; accent-color: var(--crimson); }
+.vitrine-filters-fav svg{ width:16px; height:16px; color: var(--crimson); }
+.vitrine-filters-clear{
+  border:none;
+  background:none;
+  color: var(--teal);
+  font-weight:700;
+  font-size: 13.5px;
+  cursor:pointer;
+  padding: 10px 4px;
+  text-decoration:underline;
+}
+.vitrine-filters-clear:hover{ color: var(--teal-dark); }
+
+@media (max-width: 767px){
+  .vitrine-filters-toggle{ display:flex; padding: 12px 14px; }
+  .vitrine-filters-row{ gap:8px; }
+  .vitrine-search{ padding: 12px 14px; }
+  .vitrine-filters-panel{
+    display:none;
+    flex-direction:column;
+    align-items:stretch;
+  }
+  .vitrine-filters-panel.is-open{ display:flex; }
+  .vitrine-filters-panel select,
+  .vitrine-filters-panel input[type="number"]{ min-width:0; width:100%; }
+}
+
+/* ==========================================================================
+   ESTADO VAZIO / SEM RESULTADOS
+   ========================================================================== */
+.vitrine-status-clear{
+  display:inline-block;
+  margin-top: 10px;
+  color: var(--teal);
+  font-weight:700;
+  text-decoration:underline;
+  background:none;
+  border:none;
+  cursor:pointer;
+  font-size: inherit;
+}
+.vitrine-status-clear:hover{ color: var(--teal-dark); }
+
+/* ==========================================================================
+   SKELETON (carregando)
+   ========================================================================== */
+@keyframes vitrineShimmer{
+  0%{ background-position: -300px 0; }
+  100%{ background-position: 300px 0; }
+}
+.vitrine-skeleton-card{
+  background: var(--paper);
+  border-radius: 22px;
+  overflow:hidden;
+  box-shadow: var(--shadow);
+}
+.vitrine-skeleton-img,
+.vitrine-skeleton-line{
+  background: linear-gradient(90deg, var(--cream-2) 25%, #f3e8d2 37%, var(--cream-2) 63%);
+  background-size: 600px 100%;
+  animation: vitrineShimmer 1.4s ease-in-out infinite;
+}
+.vitrine-skeleton-img{ width:100%; aspect-ratio: 4/5; }
+.vitrine-skeleton-body{ padding: 20px 22px 24px; display:flex; flex-direction:column; gap:10px; }
+.vitrine-skeleton-line{ height:14px; border-radius:7px; }
+.vitrine-skeleton-line.w-60{ width:60%; }
+.vitrine-skeleton-line.w-40{ width:40%; }
+.vitrine-skeleton-line.w-100{ width:100%; }
+.vitrine-skeleton-line.h-btn{ height:40px; border-radius:999px; margin-top:8px; }
+
+@media (prefers-reduced-motion: reduce){
+  .vitrine-skeleton-img, .vitrine-skeleton-line{ animation:none; }
+}
+
+/* ==========================================================================
+   MODAL DE PRODUTO
+   ========================================================================== */
+.vitrine-modal{
+  position:fixed; inset:0; z-index:100;
+  display:flex; align-items:center; justify-content:center;
+  padding: 20px;
+}
+.vitrine-modal[hidden]{ display:none; }
+body.vitrine-modal-open{ overflow:hidden; }
+.vitrine-modal-backdrop{
+  position:absolute; inset:0;
+  background: rgba(58,42,32,0.6);
+}
+.vitrine-modal-content{
+  position:relative;
+  background: var(--paper);
+  border-radius: 24px;
+  max-width: 880px;
+  width:100%;
+  max-height: 90vh;
+  overflow:auto;
+  display:grid;
+  grid-template-columns: 1.1fr 1fr;
+  box-shadow: 0 30px 60px rgba(0,0,0,0.35);
+}
+.vitrine-modal-close{
+  position:absolute; top:14px; right:14px; z-index:2;
+  width:36px; height:36px;
+  border-radius:50%;
+  border:none;
+  background: rgba(255,253,248,0.9);
+  display:flex; align-items:center; justify-content:center;
+  cursor:pointer;
+  box-shadow: 0 3px 8px rgba(58,42,32,0.18);
+}
+.vitrine-modal-close svg{ width:18px; height:18px; color: var(--ink); }
+
+.vitrine-modal-gallery{
+  position:relative;
+  background: var(--cream-2);
+  display:flex; align-items:center; justify-content:center;
+  min-height: 320px;
+}
+.vitrine-modal-gallery-img{ width:100%; height:100%; min-height:320px; }
+.vitrine-modal-gallery-img img{ width:100%; height:100%; object-fit:cover; display:block; }
+.vitrine-modal-gallery-img svg{ width:56px; height:56px; color: var(--ink-soft); opacity:0.5; }
+.vitrine-modal-gallery-img.is-empty{ display:flex; align-items:center; justify-content:center; }
+
+.vitrine-modal-arrow{
+  position:absolute; top:50%; transform:translateY(-50%);
+  width:38px; height:38px;
+  border-radius:50%;
+  border:none;
+  background: rgba(255,253,248,0.85);
+  display:flex; align-items:center; justify-content:center;
+  cursor:pointer;
+}
+.vitrine-modal-arrow svg{ width:20px; height:20px; color: var(--ink); }
+.vitrine-modal-arrow-prev{ left:12px; }
+.vitrine-modal-arrow-next{ right:12px; }
+.vitrine-modal-arrow[hidden]{ display:none; }
+
+.vitrine-modal-dots{
+  position:absolute; bottom:14px; left:0; right:0;
+  display:flex; justify-content:center; gap:6px;
+}
+.vitrine-modal-dots button{
+  width:8px; height:8px; border-radius:50%;
+  border:none; padding:0;
+  background: rgba(58,42,32,0.3);
+  cursor:pointer;
+}
+.vitrine-modal-dots button.is-active{ background: var(--crimson); }
+
+.vitrine-modal-info{ padding: 32px 30px; display:flex; flex-direction:column; gap:12px; }
+.vitrine-modal-badges{ display:flex; gap:6px; flex-wrap:wrap; }
+.vitrine-modal-info h2{ font-size: clamp(1.4rem, 2.4vw, 1.8rem); color: var(--ink); }
+.vitrine-modal-price{ font-family:"Fredoka",sans-serif; font-weight:600; font-size: 22px; color: var(--crimson-dark); }
+.vitrine-modal-info p{ margin:0; color: var(--ink-soft); font-size:15px; line-height:1.6; flex:1; }
+.vitrine-modal-buy{ width:100%; margin-top: 8px; }
+.vitrine-modal-buy svg{ width:18px; height:18px; }
+
+@media (max-width: 700px){
+  .vitrine-modal-content{ grid-template-columns: 1fr; }
+  .vitrine-modal-gallery{ min-height: 260px; }
+  .vitrine-modal-gallery-img{ min-height:260px; }
+}
+
+/* ==========================================================================
+   PRÉVIA DA VITRINE NA PÁGINA INICIAL (index.html)
+   Reaproveita .vitrine-grid/.vitrine-card/.vitrine-status daqui mesmo —
+   só o cabeçalho da seção e o botão "Ver vitrine completa" são exclusivos
+   dela.
+   ========================================================================== */
+.vitrine-home .head{ max-width: 620px; margin-bottom: 40px; }
+.vitrine-home .eyebrow{ color: var(--crimson-dark); }
+.vitrine-home h2{ color: var(--ink); font-size: clamp(1.9rem, 3.2vw, 2.5rem); }
+.vitrine-home p.lead{ margin-top: 14px; color: var(--ink-soft); font-size: 16.5px; max-width: 56ch; }
+.vitrine-home-cta{ text-align:center; margin-top: 36px; }
